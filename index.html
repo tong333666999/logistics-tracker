@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.4</div>
+        <div class="card-title">📦 物流追蹤系統1.1.5</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -878,7 +878,9 @@
         currentPackage = packageInfo;
         currentSignStatus = signStatus;
         
-        if (signStatus.nextRole === 'completed') {
+        // 如果是「簽收模式」且已完成，才顯示完成頁面
+        // 如果是「檢視模式」(History/Query)，即使已完成也顯示詳細頁面
+        if (!viewOnly && signStatus.nextRole === 'completed') {
           showCompletedPage();
           return;
         }
