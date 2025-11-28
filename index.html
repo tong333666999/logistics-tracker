@@ -598,7 +598,7 @@
     // ============ 基本設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbz31W3F2r-j5oTt-P8-wvXu4mRCPW900i073iSLOFpWsp3gtUfzrO66jYUJf7UlQIyM/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbxz36LxLddRPYyf9iGPBinwPNDAuPNIKIJ8DhSa5Y9OJYc1GhEh6yiNICg_kULZsrLS/exec'
     };
     
     // ============ 全域變數 ============
@@ -695,7 +695,7 @@
       }
     }
     
-    // ============ API 呼叫（使用 JSONP 方式避免 CORS）============
+    // ============ API 呼叫 ============
     async function apiGet(action, params = {}) {
       const url = new URL(CONFIG.GAS_URL);
       url.searchParams.set('action', action);
@@ -714,10 +714,21 @@
     }
     
     async function apiPost(action, data) {
-      // Google Apps Script 不支援 CORS POST，改用 GET 傳送資料
+      // 使用 GET 方式傳送資料（避免 CORS 問題）
       const url = new URL(CONFIG.GAS_URL);
       url.searchParams.set('action', action);
-      url.searchParams.set('data', JSON.stringify(data));
+      
+      // 將資料轉成 URL 參數
+      Object.keys(data).forEach(key => {
+        const value = data[key];
+        if (typeof value === 'object') {
+          url.searchParams.set(key, JSON.stringify(value));
+        } else {
+          url.searchParams.set(key, value);
+        }
+      });
+      
+      console.log('API POST URL:', url.toString());
       
       try {
         const response = await fetch(url.toString(), {
