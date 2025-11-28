@@ -593,7 +593,7 @@
     // ============ 基本設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbwFNpJ5RsZhjdgHB9amEIFk_MvXSRterDfffYNQCwqEQviwSU1LSZj6ISJwDLsz6Tr5/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbzKwTqPc_pJCXr6nma2gq964AmZ4-FWTaluUwzPfWvJ2tiGP-bn7czpLTkNMEF2PHRo/exec'
     };
     
     // ============ 全域變數 ============
@@ -688,23 +688,40 @@
       }
     }
     
-    // ============ API 呼叫 ============
+    // ============ API 呼叫（使用 JSONP 方式避免 CORS）============
     async function apiGet(action, params = {}) {
       const url = new URL(CONFIG.GAS_URL);
       url.searchParams.set('action', action);
       Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
       
-      const response = await fetch(url.toString());
-      return await response.json();
+      try {
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('API GET Error:', error);
+        throw error;
+      }
     }
     
     async function apiPost(action, data) {
-      const response = await fetch(CONFIG.GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ...data })
-      });
-      return await response.json();
+      // Google Apps Script 不支援 CORS POST，改用 GET 傳送資料
+      const url = new URL(CONFIG.GAS_URL);
+      url.searchParams.set('action', action);
+      url.searchParams.set('data', JSON.stringify(data));
+      
+      try {
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('API POST Error:', error);
+        throw error;
+      }
     }
     
     // ============ 使用者資訊 ============
