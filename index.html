@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.0</div>
+        <div class="card-title">📦 物流追蹤系統1.1.1</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -557,6 +557,25 @@
     }
 
     // ============ 圖片處理 ============
+    // 專門用於傳送大量資料 (如圖片) 的 POST 函式
+    async function postToGAS(action, data) {
+      const url = CONFIG.GAS_URL;
+      const payload = { ...data, action: action };
+      
+      // 使用 fetch 發送 POST 請求
+      // 注意：不設定 Content-Type 為 application/json 以避免 CORS 預檢請求 (Preflight)
+      const response = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('網路請求失敗: ' + response.status);
+      }
+      
+      return await response.json();
+    }
+
     async function handleImageUpload(input) {
       if (!input.files || !input.files[0]) return;
       
@@ -567,8 +586,8 @@
         // 壓縮圖片 (避免超過 GAS 限制)
         const base64 = await compressImage(file);
         
-        // 呼叫 GAS
-        const result = await apiPost('parseImage', { image: base64 });
+        // 呼叫 GAS (改用 postToGAS)
+        const result = await postToGAS('parseImage', { image: base64 });
         
         if (result.error) {
           alert('辨識失敗：' + result.error);
