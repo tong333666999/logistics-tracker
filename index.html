@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.2</div>
+        <div class="card-title">📦 物流追蹤系統1.1.3</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -326,8 +326,11 @@
           <label class="input-label">輸入單號</label>
           <input type="text" id="input-query-order" class="input-field" placeholder="例如：20251128-143022">
         </div>
-        <button class="btn btn-primary" onclick="queryPackage()">查詢</button>
+        <button class="btn btn-primary" onclick="queryPackage()">查詢單號</button>
+        <button class="btn btn-secondary" onclick="queryPending()" style="background: #ffc107; color: #333; margin-top: 10px;">📋 列出所有待取件</button>
         <button class="btn btn-secondary" onclick="showPage('menu')">返回</button>
+        
+        <div id="query-results" style="margin-top: 20px;"></div>
       </div>
     </div>
     
@@ -388,8 +391,10 @@
     <!-- 歷史紀錄 -->
     <div id="page-history" class="page">
       <div class="card">
-        <div class="card-title">📋 簽收紀錄</div>
-        <p style="text-align: center; color: #666; padding: 20px;">功能開發中...</p>
+        <div class="card-title">📋 近兩週簽收紀錄</div>
+        <div id="history-list" class="items-list" style="background: white; padding: 0;">
+          <p style="text-align: center; color: #666; padding: 20px;">載入中...</p>
+        </div>
         <button class="btn btn-secondary" onclick="showPage('menu')">返回</button>
       </div>
     </div>
@@ -400,7 +405,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycby424l8n6hYnSXO991-V2oGq5tv7Se2NrOgt3XClpkPXJnpvI42YWOGGkpxJIV3ioz2/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbzWQdjfPoYf8faxystVCGp6ncCrx-rSCbzTLM-l1dX8wQRpfqRmC-Lgdq_m3cKZCbeK/exec'
     };
 
     const SETTINGS = {
@@ -466,6 +471,10 @@
       if (pageId === 'sign') {
         const nameGroup = document.getElementById('name-input-group');
         nameGroup.style.display = SETTINGS.REQUIRE_NAME ? 'block' : 'none';
+      }
+      
+      if (pageId === 'history') {
+        loadHistory();
       }
     }
 
@@ -786,6 +795,68 @@
         return;
       }
       await loadPackageForSign(orderId);
+    }
+    
+    async function queryPending() {
+      document.getElementById('query-results').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      
+      try {
+        const list = await apiGet('getPending');
+        if (list.length === 0) {
+          document.getElementById('query-results').innerHTML = '<p style="text-align:center; padding:20px;">目前沒有待取件包裹 🎉</p>';
+          return;
+        }
+        
+        let html = '<div class="card-title" style="font-size:16px;">待取件清單 (' + list.length + ')</div>';
+        list.forEach(item => {
+          html += `
+            <div class="card" style="border:1px solid #eee; box-shadow:none; margin-bottom:10px; cursor:pointer;" onclick="loadPackageForSign('${item.orderId}')">
+              <div style="font-weight:bold; color:#667eea;">${item.orderId}</div>
+              <div style="font-size:14px; color:#333;">${item.partner} ➡️ ${item.receiver}</div>
+              <div style="font-size:12px; color:#999;">${formatTime(item.time)}</div>
+            </div>
+          `;
+        });
+        document.getElementById('query-results').innerHTML = html;
+        
+      } catch (e) {
+        document.getElementById('query-results').innerHTML = '<p style="color:red;">載入失敗: ' + e.message + '</p>';
+      }
+    }
+    
+    async function loadHistory() {
+      const container = document.getElementById('history-list');
+      container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      
+      try {
+        const list = await apiGet('getHistory');
+        if (list.length === 0) {
+          container.innerHTML = '<p style="text-align:center; padding:20px;">近兩週沒有簽收紀錄</p>';
+          return;
+        }
+        
+        let html = '';
+        list.forEach(item => {
+          let statusColor = '#28a745'; // Completed
+          if (item.status === '運送中') statusColor = '#ffc107';
+          if (item.status === '已入庫') statusColor = '#17a2b8';
+          
+          html += `
+            <div class="card" style="border:1px solid #eee; box-shadow:none; margin-bottom:10px; cursor:pointer;" onclick="loadPackageForSign('${item.orderId}')">
+              <div style="display:flex; justify-content:space-between;">
+                <div style="font-weight:bold; color:#667eea;">${item.orderId}</div>
+                <div style="font-size:12px; padding:2px 6px; border-radius:4px; background:${statusColor}; color:white;">${item.status}</div>
+              </div>
+              <div style="font-size:14px; color:#333; margin-top:4px;">${item.partner} ➡️ ${item.receiver}</div>
+              <div style="font-size:12px; color:#999;">${formatTime(item.time)}</div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+        
+      } catch (e) {
+        container.innerHTML = '<p style="color:red;">載入失敗: ' + e.message + '</p>';
+      }
     }
 
     // ============ 簽收流程 ============
