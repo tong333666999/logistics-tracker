@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.3</div>
+        <div class="card-title">📦 物流追蹤系統1.1.4</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -322,15 +322,8 @@
     <div id="page-query" class="page">
       <div class="card">
         <div class="card-title">🔍 查詢包裹</div>
-        <div class="input-group">
-          <label class="input-label">輸入單號</label>
-          <input type="text" id="input-query-order" class="input-field" placeholder="例如：20251128-143022">
-        </div>
-        <button class="btn btn-primary" onclick="queryPackage()">查詢單號</button>
-        <button class="btn btn-secondary" onclick="queryPending()" style="background: #ffc107; color: #333; margin-top: 10px;">📋 列出所有待取件</button>
+        <div id="query-results" style="margin-top: 0;"></div>
         <button class="btn btn-secondary" onclick="showPage('menu')">返回</button>
-        
-        <div id="query-results" style="margin-top: 20px;"></div>
       </div>
     </div>
     
@@ -476,6 +469,10 @@
       if (pageId === 'history') {
         loadHistory();
       }
+      
+      if (pageId === 'query') {
+        queryPending();
+      }
     }
 
     // ============ API 呼叫（JSONP）============
@@ -501,7 +498,7 @@
         const timeout = setTimeout(() => {
           cleanup();
           reject(new Error('請求超時'));
-        }, 30000);
+        }, 60000);
         
         let script;
         
@@ -810,7 +807,7 @@
         let html = '<div class="card-title" style="font-size:16px;">待取件清單 (' + list.length + ')</div>';
         list.forEach(item => {
           html += `
-            <div class="card" style="border:1px solid #eee; box-shadow:none; margin-bottom:10px; cursor:pointer;" onclick="loadPackageForSign('${item.orderId}')">
+            <div class="card" style="border:1px solid #eee; box-shadow:none; margin-bottom:10px; cursor:pointer;" onclick="loadPackageForSign('${item.orderId}', true)">
               <div style="font-weight:bold; color:#667eea;">${item.orderId}</div>
               <div style="font-size:14px; color:#333;">${item.partner} ➡️ ${item.receiver}</div>
               <div style="font-size:12px; color:#999;">${formatTime(item.time)}</div>
@@ -842,7 +839,7 @@
           if (item.status === '已入庫') statusColor = '#17a2b8';
           
           html += `
-            <div class="card" style="border:1px solid #eee; box-shadow:none; margin-bottom:10px; cursor:pointer;" onclick="loadPackageForSign('${item.orderId}')">
+            <div class="card" style="border:1px solid #eee; box-shadow:none; margin-bottom:10px; cursor:pointer;" onclick="loadPackageForSign('${item.orderId}', true)">
               <div style="display:flex; justify-content:space-between;">
                 <div style="font-weight:bold; color:#667eea;">${item.orderId}</div>
                 <div style="font-size:12px; padding:2px 6px; border-radius:4px; background:${statusColor}; color:white;">${item.status}</div>
@@ -860,7 +857,7 @@
     }
 
     // ============ 簽收流程 ============
-    async function loadPackageForSign(orderId) {
+    async function loadPackageForSign(orderId, viewOnly = false) {
       showPage('loading');
       
       try {
@@ -886,14 +883,14 @@
           return;
         }
         
-        renderSignPage();
+        renderSignPage(viewOnly);
       } catch (error) {
         alert('載入失敗：' + error.message);
         showPage('menu');
       }
     }
 
-    function renderSignPage() {
+    function renderSignPage(viewOnly = false) {
       document.getElementById('sign-order-id').textContent = currentPackage.orderId;
       document.getElementById('sign-partner').textContent = currentPackage.partner;
       
@@ -906,16 +903,31 @@
       document.getElementById('sign-items').innerHTML = itemsHtml;
       
       selectedRole = currentSignStatus.nextRole;
-      document.getElementById('sign-progress').innerHTML = renderProgress();
+      document.getElementById('sign-progress').innerHTML = renderProgress(viewOnly);
       
       if (SETTINGS.REQUIRE_NAME) {
         document.getElementById('input-signer-name').value = currentUser.name || '';
       }
       
+      // View Only Mode Logic
+      const btnConfirm = document.getElementById('btn-confirm-sign');
+      const nameGroup = document.getElementById('name-input-group');
+      const pageTitle = document.querySelector('#page-sign .card-title');
+      
+      if (viewOnly) {
+        btnConfirm.style.display = 'none';
+        nameGroup.style.display = 'none';
+        pageTitle.textContent = '📦 包裹詳情 (僅供檢視)';
+      } else {
+        btnConfirm.style.display = 'block';
+        if (SETTINGS.REQUIRE_NAME) nameGroup.style.display = 'block';
+        pageTitle.textContent = '📦 包裹簽收';
+      }
+      
       showPage('sign');
     }
 
-    function renderProgress() {
+    function renderProgress(viewOnly = false) {
       const steps = [
         { key: 'driver', icon: '🚚', name: '司機', data: currentSignStatus.driver },
         { key: 'warehouse', icon: '🏭', name: '庫房', data: currentSignStatus.warehouse },
@@ -934,12 +946,12 @@
           detail = `${step.data.name} (${formatTime(step.data.time)})`;
         } else if (isSelected) {
           statusClass = 'selected';
-          detail = '← 點擊簽收';
-          clickHandler = `onclick="selectRole('${step.key}')"`;
+          detail = viewOnly ? '等待簽收' : '← 點擊簽收';
+          if (!viewOnly) clickHandler = `onclick="selectRole('${step.key}')"`;
         } else if (isAvailable) {
           statusClass = 'pending';
-          detail = '點擊選擇';
-          clickHandler = `onclick="selectRole('${step.key}')"`;
+          detail = viewOnly ? '等待中' : '點擊選擇';
+          if (!viewOnly) clickHandler = `onclick="selectRole('${step.key}')"`;
         } else {
           statusClass = 'disabled';
         }
