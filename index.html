@@ -405,7 +405,7 @@
     <div id="page-menu" class="page">
       <div class="card">
         <div class="card-title">📦 物流追蹤系統</div>
-        <p>歡迎，<span id="user-name">使用者</span>！</p>
+        <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
             <div class="menu-btn-icon">📝</div>
@@ -573,7 +573,24 @@
   </div>
 
   <script>
-    // ============ 設定 ============
+    // ╔════════════════════════════════════════════════════════════════╗
+    // ║                      🔧 系統設定區                              ║
+    // ╠════════════════════════════════════════════════════════════════╣
+    // ║  REQUIRE_LOGIN: 是否需要 LINE 登入                             ║
+    // ║    - true  = 需要登入（可記住使用者姓名，追蹤 LINE ID）          ║
+    // ║    - false = 免登入（任何人掃碼即可使用）                        ║
+    // ║                                                                ║
+    // ║  REQUIRE_NAME: 簽收時是否需要輸入姓名                           ║
+    // ║    - true  = 需要輸入姓名                                      ║
+    // ║    - false = 不需要輸入姓名（自動填入角色名稱）                  ║
+    // ╚════════════════════════════════════════════════════════════════╝
+    
+    const SETTINGS = {
+      REQUIRE_LOGIN: false,   // 改成 true = 需要 LINE 登入
+      REQUIRE_NAME: false     // 改成 true = 需要輸入姓名
+    };
+    
+    // ============ 基本設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
       GAS_URL: 'https://script.google.com/macros/s/AKfycbwFNpJ5RsZhjdgHB9amEIFk_MvXSRterDfffYNQCwqEQviwSU1LSZj6ISJwDLsz6Tr5/exec'
@@ -595,18 +612,36 @@
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
+        // 根據設定決定是否需要登入
+        if (SETTINGS.REQUIRE_LOGIN) {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+          }
+          
+          // 取得使用者資訊
+          const profile = await liff.getProfile();
+          currentUser.lineUserId = profile.userId;
+          currentUser.name = profile.displayName;
+          
+          // 從後端取得使用者記錄
+          await loadUserInfo();
+        } else {
+          // 免登入模式：產生匿名 ID
+          currentUser.lineUserId = 'anonymous_' + Date.now();
+          currentUser.name = '';
+          
+          // 如果已登入，還是可以取得資訊
+          if (liff.isLoggedIn()) {
+            try {
+              const profile = await liff.getProfile();
+              currentUser.lineUserId = profile.userId;
+              currentUser.name = profile.displayName;
+            } catch (e) {
+              console.log('無法取得 LINE 資訊，使用匿名模式');
+            }
+          }
         }
-        
-        // 取得使用者資訊
-        const profile = await liff.getProfile();
-        currentUser.lineUserId = profile.userId;
-        currentUser.name = profile.displayName;
-        
-        // 從後端取得使用者記錄
-        await loadUserInfo();
         
         // 檢查是否從 QR Code 進入（帶有 orderId 參數）
         const urlParams = new URLSearchParams(window.location.search);
@@ -633,7 +668,23 @@
       document.getElementById('page-' + pageId).classList.add('active');
       
       if (pageId === 'menu') {
-        document.getElementById('user-name').textContent = currentUser.name;
+        // 根據設定顯示歡迎訊息
+        const welcomeEl = document.getElementById('welcome-message');
+        if (SETTINGS.REQUIRE_LOGIN && currentUser.name) {
+          welcomeEl.textContent = `歡迎，${currentUser.name}！`;
+        } else {
+          welcomeEl.textContent = '歡迎使用！';
+        }
+      }
+      
+      if (pageId === 'sign') {
+        // 根據設定顯示/隱藏姓名輸入框
+        const nameGroup = document.getElementById('name-input-group');
+        if (SETTINGS.REQUIRE_NAME) {
+          nameGroup.style.display = 'block';
+        } else {
+          nameGroup.style.display = 'none';
+        }
       }
     }
     
@@ -658,6 +709,8 @@
     
     // ============ 使用者資訊 ============
     async function loadUserInfo() {
+      if (!SETTINGS.REQUIRE_LOGIN) return;
+      
       try {
         const result = await apiGet('getUserInfo', { lineUserId: currentUser.lineUserId });
         if (result.name) {
@@ -867,10 +920,12 @@
       selectedRole = currentSignStatus.nextRole;
       updateRoleSelection();
       
-      // 姓名
-      document.getElementById('input-signer-name').value = currentUser.name || '';
-      if (currentUser.preferredRole) {
-        document.getElementById('name-hint').textContent = `💡 系統已記住您的姓名`;
+      // 姓名處理（只在需要時顯示）
+      if (SETTINGS.REQUIRE_NAME) {
+        document.getElementById('input-signer-name').value = currentUser.name || '';
+        if (currentUser.preferredRole) {
+          document.getElementById('name-hint').textContent = `💡 系統已記住您的姓名`;
+        }
       }
       
       showPage('sign');
@@ -946,11 +1001,19 @@
     }
     
     async function confirmSign() {
-      const name = document.getElementById('input-signer-name').value.trim();
+      // 根據設定決定姓名
+      let name = '';
+      const roleNames = { driver: '司機', warehouse: '庫房', engineer: '工程師' };
       
-      if (!name) {
-        alert('請輸入您的姓名');
-        return;
+      if (SETTINGS.REQUIRE_NAME) {
+        name = document.getElementById('input-signer-name').value.trim();
+        if (!name) {
+          alert('請輸入您的姓名');
+          return;
+        }
+      } else {
+        // 不需要姓名時，使用角色名稱
+        name = roleNames[selectedRole];
       }
       
       if (!selectedRole) {
@@ -969,11 +1032,12 @@
         });
         
         if (result.success) {
-          // 更新使用者姓名
-          currentUser.name = name;
+          // 更新使用者姓名（僅在需要時）
+          if (SETTINGS.REQUIRE_NAME) {
+            currentUser.name = name;
+          }
           
           // 顯示成功頁面
-          const roleNames = { driver: '司機', warehouse: '庫房', engineer: '工程師' };
           document.getElementById('sign-complete-title').textContent = 
             `${roleNames[selectedRole]}簽收成功！`;
           
@@ -983,11 +1047,17 @@
               <span class="info-label">單號</span>
               <span class="info-value">${currentPackage.orderId}</span>
             </div>
-            <div class="info-row">
-              <span class="info-label">簽收者</span>
-              <span class="info-value">${name}</span>
-            </div>
           `;
+          
+          // 如果有輸入姓名才顯示
+          if (SETTINGS.REQUIRE_NAME) {
+            detailsHtml += `
+              <div class="info-row">
+                <span class="info-label">簽收者</span>
+                <span class="info-value">${name}</span>
+              </div>
+            `;
+          }
           
           if (result.status.nextRole === 'completed') {
             detailsHtml += `
