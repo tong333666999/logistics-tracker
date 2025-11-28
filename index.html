@@ -399,6 +399,31 @@
       margin: 12px 0;
       text-align: center;
     }
+
+    /* 列印樣式 */
+    @media print {
+      body {
+        background: white !important;
+        padding: 0 !important;
+      }
+      
+      .no-print {
+        display: none !important;
+      }
+      
+      .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd;
+      }
+      
+      .page {
+        display: none !important;
+      }
+      
+      .page.active {
+        display: block !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -476,7 +501,7 @@
     
     <!-- 建立成功 + QR Code -->
     <div id="page-created" class="page">
-      <div class="card">
+      <div class="card" id="print-area">
         <div class="completed-badge">
           <div class="completed-icon">✅</div>
           <div class="completed-title">包裹建立成功！</div>
@@ -487,12 +512,39 @@
           <span class="info-value" id="created-order-id">-</span>
         </div>
         
+        <div class="info-row">
+          <span class="info-label">廠家</span>
+          <span class="info-value" id="created-partner">-</span>
+        </div>
+        
+        <div class="info-row">
+          <span class="info-label">收件者</span>
+          <span class="info-value" id="created-receiver">-</span>
+        </div>
+        
+        <div class="items-list" id="created-items">
+          <!-- 品項列表 -->
+        </div>
+        
         <div class="qr-container">
           <p>請將此 QR Code 貼在包裹上</p>
           <img id="created-qr-image" class="qr-image" src="" alt="QR Code">
         </div>
+      </div>
+      
+      <!-- 按鈕區（列印時隱藏） -->
+      <div class="card no-print">
+        <div class="input-group">
+          <label class="input-label">寄送 Email</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="input-email-prefix" class="input-field" placeholder="輸入帳號" style="flex: 1;">
+            <span style="line-height: 48px;">@gmt.com.tw</span>
+          </div>
+        </div>
         
-        <button class="btn btn-primary" onclick="showPage('menu')">完成</button>
+        <button class="btn btn-primary" onclick="sendEmail()">📧 寄送 Email</button>
+        <button class="btn btn-secondary" onclick="printPage()" style="background: #17a2b8; color: white;">🖨️ 列印此頁</button>
+        <button class="btn btn-secondary" onclick="showPage('menu')">完成</button>
       </div>
     </div>
     
@@ -792,6 +844,9 @@
       btn.closest('.item-entry').remove();
     }
     
+    // 儲存最後建立的包裹資訊（用於列印和 Email）
+    let lastCreatedPackage = null;
+
     async function createPackage() {
       // 檢查是否需要登入
       if (SETTINGS.REQUIRE_LOGIN_FOR_CREATE && !liff.isLoggedIn()) {
@@ -832,12 +887,34 @@
           receiver,
           items,
           lineUserId: currentUser.lineUserId,
-          lineName: currentUser.name  // 新增：LINE 顯示名稱
+          lineName: currentUser.name
         });
         
         if (result.success) {
+          // 儲存建立的包裹資訊
+          lastCreatedPackage = {
+            orderId: result.orderId,
+            partner: partner,
+            receiver: receiver,
+            items: items,
+            qrCodeUrl: result.qrCodeUrl
+          };
+          
+          // 顯示資訊
           document.getElementById('created-order-id').textContent = result.orderId;
+          document.getElementById('created-partner').textContent = partner;
+          document.getElementById('created-receiver').textContent = receiver;
           document.getElementById('created-qr-image').src = result.qrCodeUrl;
+          
+          // 顯示品項
+          const itemsHtml = items.map(item => `
+            <div class="item-row">
+              <span>${item.model}${item.accessory ? ' (' + item.accessory + ')' : ''}</span>
+              <span>× ${item.quantity}</span>
+            </div>
+          `).join('');
+          document.getElementById('created-items').innerHTML = itemsHtml;
+          
           showPage('created');
           
           // 清空表單
@@ -860,6 +937,47 @@
       } catch (error) {
         alert('發生錯誤：' + error.message);
         showPage('create');
+      }
+    }
+    
+    // 列印功能
+    function printPage() {
+      window.print();
+    }
+    
+    // 寄送 Email 功能
+    async function sendEmail() {
+      const emailPrefix = document.getElementById('input-email-prefix').value.trim();
+      
+      if (!emailPrefix) {
+        alert('請輸入 Email 帳號');
+        return;
+      }
+      
+      const toEmail = emailPrefix + '@gmt.com.tw';
+      
+      if (!lastCreatedPackage) {
+        alert('找不到包裹資訊');
+        return;
+      }
+      
+      try {
+        const result = await apiPost('sendPackageEmail', {
+          toEmail: toEmail,
+          orderId: lastCreatedPackage.orderId,
+          partner: lastCreatedPackage.partner,
+          receiver: lastCreatedPackage.receiver,
+          items: lastCreatedPackage.items,
+          qrCodeUrl: lastCreatedPackage.qrCodeUrl
+        });
+        
+        if (result.success) {
+          alert('Email 已寄出至 ' + toEmail);
+        } else {
+          alert('寄送失敗：' + result.error);
+        }
+      } catch (error) {
+        alert('寄送錯誤：' + error.message);
       }
     }
     
@@ -1087,7 +1205,10 @@
             `;
           }
           
-          if (result.status.nextRole === 'completed') {
+          // 判斷下一站
+          const nextRole = result.status.nextRole;
+          
+          if (nextRole === 'completed') {
             detailsHtml += `
               <div style="text-align: center; margin-top: 20px; color: #28a745;">
                 <div style="font-size: 32px;">🎉</div>
@@ -1095,10 +1216,10 @@
               </div>
             `;
           } else {
-            const nextRoleNames = { warehouse: '庫房', engineer: '工程師' };
+            const nextRoleNames = { driver: '司機', warehouse: '庫房', engineer: '工程師' };
             detailsHtml += `
               <div style="text-align: center; margin-top: 20px; color: #667eea;">
-                <div>📍 下一站：${nextRoleNames[result.status.nextRole]}</div>
+                <div>📍 下一站：${nextRoleNames[nextRole]}</div>
               </div>
             `;
           }
