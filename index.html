@@ -74,7 +74,7 @@
       padding: 8px 0;
     }
     
-    /* 進度條 */
+    /* 進度條（可點擊選擇） */
     .progress-container {
       margin: 20px 0;
     }
@@ -86,20 +86,33 @@
       margin: 8px 0;
       border-radius: 8px;
       background: #f8f9fa;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    
+    .progress-step:hover:not(.disabled) {
+      background: #e9ecef;
     }
     
     .progress-step.completed {
       background: #d4edda;
+      cursor: not-allowed;
     }
     
-    .progress-step.current {
+    .progress-step.selected {
       background: #fff3cd;
       border: 2px solid #ffc107;
     }
     
+    .progress-step.disabled {
+      background: #e9ecef;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
     .progress-step.pending {
       background: #f8f9fa;
-      color: #999;
     }
     
     .step-icon {
@@ -516,13 +529,8 @@
           <!-- 品項列表 -->
         </div>
         
-        <!-- 進度 -->
+        <!-- 進度（可點擊選擇） -->
         <div class="progress-container" id="sign-progress">
-          <!-- 動態產生 -->
-        </div>
-        
-        <!-- 角色選擇 -->
-        <div class="role-selector" id="role-selector">
           <!-- 動態產生 -->
         </div>
         
@@ -950,17 +958,12 @@
       `).join('');
       document.getElementById('sign-items').innerHTML = itemsHtml;
       
-      // 進度
+      // 預設選擇下一個該簽收的角色
+      selectedRole = currentSignStatus.nextRole;
+      
+      // 進度列（可點擊選擇）
       const progressHtml = renderProgress();
       document.getElementById('sign-progress').innerHTML = progressHtml;
-      
-      // 角色選擇
-      const roleHtml = renderRoleSelector();
-      document.getElementById('role-selector').innerHTML = roleHtml;
-      
-      // 預設選擇
-      selectedRole = currentSignStatus.nextRole;
-      updateRoleSelection();
       
       // 姓名處理（只在需要時顯示）
       if (SETTINGS.REQUIRE_NAME) {
@@ -981,20 +984,34 @@
       ];
       
       return steps.map(step => {
-        let status = 'pending';
-        let detail = '等待中';
+        const isCompleted = step.data.name !== '';
+        const isAvailable = currentSignStatus.availableRoles.includes(step.key);
+        const isSelected = selectedRole === step.key;
+        const isDisabled = isCompleted || !isAvailable;
         
-        if (step.data.name) {
-          status = 'completed';
+        let statusClass = '';
+        let detail = '等待中';
+        let clickHandler = '';
+        
+        if (isCompleted) {
+          statusClass = 'completed disabled';
           detail = `${step.data.name} (${formatTime(step.data.time)})`;
-        } else if (step.key === currentSignStatus.nextRole) {
-          status = 'current';
-          detail = '← 目前';
+        } else if (isSelected) {
+          statusClass = 'selected';
+          detail = '← 點擊簽收';
+          clickHandler = `onclick="selectRole('${step.key}')"`;
+        } else if (isAvailable) {
+          statusClass = 'pending';
+          detail = '點擊選擇';
+          clickHandler = `onclick="selectRole('${step.key}')"`;
+        } else {
+          statusClass = 'disabled';
+          detail = '等待中';
         }
         
         return `
-          <div class="progress-step ${status}">
-            <div class="step-icon ${status}">${step.data.name ? '✓' : step.icon}</div>
+          <div class="progress-step ${statusClass}" data-role="${step.key}" ${clickHandler}>
+            <div class="step-icon ${isCompleted ? 'completed' : (isSelected ? 'current' : 'pending')}">${isCompleted ? '✓' : step.icon}</div>
             <div class="step-info">
               <div class="step-title">${step.name}</div>
               <div class="step-detail">${detail}</div>
@@ -1004,42 +1021,11 @@
       }).join('');
     }
     
-    function renderRoleSelector() {
-      const roles = [
-        { key: 'driver', icon: '🚚', name: '司機' },
-        { key: 'warehouse', icon: '🏭', name: '庫房' },
-        { key: 'engineer', icon: '👷', name: '工程師' }
-      ];
-      
-      return roles.map(role => {
-        const isCompleted = currentSignStatus[role.key].name !== '';
-        const isAvailable = currentSignStatus.availableRoles.includes(role.key);
-        const isDisabled = isCompleted || !isAvailable;
-        
-        return `
-          <div class="role-option ${isDisabled ? 'disabled' : ''}" 
-               data-role="${role.key}"
-               onclick="${isDisabled ? '' : `selectRole('${role.key}')`}">
-            <span class="role-icon">${role.icon}</span>
-            <span class="role-name">${role.name}</span>
-            <span class="role-status">${isCompleted ? '✓ 已簽收' : ''}</span>
-          </div>
-        `;
-      }).join('');
-    }
-    
     function selectRole(role) {
       selectedRole = role;
-      updateRoleSelection();
-    }
-    
-    function updateRoleSelection() {
-      document.querySelectorAll('.role-option').forEach(el => {
-        el.classList.remove('selected');
-        if (el.dataset.role === selectedRole && !el.classList.contains('disabled')) {
-          el.classList.add('selected');
-        }
-      });
+      // 重新渲染進度列
+      const progressHtml = renderProgress();
+      document.getElementById('sign-progress').innerHTML = progressHtml;
     }
     
     async function confirmSign() {
