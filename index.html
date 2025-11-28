@@ -6,11 +6,7 @@
   <title>📦 物流追蹤系統</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -19,23 +15,20 @@
       padding: 20px;
     }
     
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-    }
+    .container { max-width: 500px; margin: 0 auto; }
     
     .card {
       background: white;
       border-radius: 16px;
-      padding: 24px;
+      padding: 20px;
       margin-bottom: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
     .card-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -44,475 +37,162 @@
     .info-row {
       display: flex;
       justify-content: space-between;
-      padding: 12px 0;
+      padding: 8px 0;
       border-bottom: 1px solid #eee;
     }
-    
-    .info-row:last-child {
-      border-bottom: none;
-    }
-    
-    .info-label {
-      color: #666;
-    }
-    
-    .info-value {
-      font-weight: 600;
-      color: #333;
-    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #666; }
+    .info-value { font-weight: 600; color: #333; }
     
     .items-list {
       background: #f8f9fa;
       border-radius: 8px;
-      padding: 12px;
-      margin: 12px 0;
+      padding: 8px 12px;
+      margin: 8px 0;
     }
     
     .item-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 5px 0;
     }
     
-    /* 進度條（可點擊選擇） */
-    .progress-container {
-      margin: 20px 0;
-    }
-    
+    /* 進度條 */
     .progress-step {
       display: flex;
       align-items: center;
-      padding: 12px;
-      margin: 8px 0;
+      padding: 10px;
+      margin: 6px 0;
       border-radius: 8px;
       background: #f8f9fa;
       cursor: pointer;
       transition: all 0.2s;
       border: 2px solid transparent;
     }
-    
-    .progress-step:hover:not(.disabled) {
-      background: #e9ecef;
-    }
-    
-    .progress-step.completed {
-      background: #d4edda;
-      cursor: not-allowed;
-    }
-    
-    .progress-step.selected {
-      background: #fff3cd;
-      border: 2px solid #ffc107;
-    }
-    
-    .progress-step.disabled {
-      background: #e9ecef;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    
-    .progress-step.pending {
-      background: #f8f9fa;
-    }
+    .progress-step:hover:not(.disabled) { background: #e9ecef; }
+    .progress-step.completed { background: #d4edda; cursor: not-allowed; }
+    .progress-step.selected { background: #fff3cd; border: 2px solid #ffc107; }
+    .progress-step.disabled { background: #e9ecef; cursor: not-allowed; opacity: 0.6; }
     
     .step-icon {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      margin-right: 12px;
+      font-size: 18px;
+      margin-right: 10px;
     }
-    
     .step-icon.completed { background: #28a745; color: white; }
     .step-icon.current { background: #ffc107; color: white; }
     .step-icon.pending { background: #e9ecef; color: #999; }
     
-    .step-info {
-      flex: 1;
-    }
-    
-    .step-title {
-      font-weight: bold;
-    }
-    
-    .step-detail {
-      font-size: 12px;
-      color: #666;
-    }
-    
-    /* 角色選擇 */
-    .role-selector {
-      margin: 16px 0;
-    }
-    
-    .role-option {
-      display: flex;
-      align-items: center;
-      padding: 16px;
-      margin: 8px 0;
-      border: 2px solid #e9ecef;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .role-option:hover:not(.disabled) {
-      border-color: #667eea;
-      background: #f8f9ff;
-    }
-    
-    .role-option.selected {
-      border-color: #667eea;
-      background: #667eea;
-      color: white;
-    }
-    
-    .role-option.disabled {
-      background: #e9ecef;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    
-    .role-option.disabled .role-status {
-      color: #28a745;
-    }
-    
-    .role-icon {
-      font-size: 24px;
-      margin-right: 12px;
-    }
-    
-    .role-name {
-      font-weight: bold;
-      flex: 1;
-    }
-    
-    .role-status {
-      font-size: 12px;
-    }
+    .step-info { flex: 1; }
+    .step-title { font-weight: bold; font-size: 14px; }
+    .step-detail { font-size: 12px; color: #666; }
     
     /* 輸入框 */
-    .input-group {
-      margin: 16px 0;
-    }
-    
-    .input-label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #333;
-    }
-    
+    .input-group { margin: 12px 0; }
+    .input-label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px; }
     .input-field {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
       border: 2px solid #e9ecef;
       border-radius: 10px;
       font-size: 16px;
-      transition: border-color 0.2s;
     }
-    
-    .input-field:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    
-    .input-hint {
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
-    }
+    .input-field:focus { outline: none; border-color: #667eea; }
+    .input-hint { font-size: 12px; color: #666; margin-top: 4px; }
     
     /* 按鈕 */
     .btn {
       width: 100%;
-      padding: 16px;
+      padding: 14px;
       border: none;
       border-radius: 12px;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s;
     }
-    
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+    .btn-primary:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #f8f9fa; color: #333; margin-top: 10px; }
     
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    /* 成功頁面 - 緊湊版 */
+    .completed-badge { text-align: center; padding: 10px; }
+    .completed-icon { font-size: 36px; margin-bottom: 6px; }
+    .completed-title { font-size: 18px; font-weight: bold; color: #28a745; }
+    
+    /* QR Code - 縮小版 */
+    .qr-container { text-align: center; padding: 8px; }
+    .qr-container p { font-size: 12px; margin-bottom: 6px; color: #666; }
+    .qr-image {
+      width: 150px;
+      height: 150px;
+      margin: 6px auto;
+      border: 3px solid #667eea;
+      border-radius: 10px;
     }
     
-    .btn-primary:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    .btn-secondary {
-      background: #f8f9fa;
-      color: #333;
-      margin-top: 12px;
-    }
-    
-    /* ========== 修正：成功頁面更緊湊 ========== */
-
-	/* 成功徽章區域 - 縮小 padding */
-	.completed-badge {
-	  text-align: center;
-	  padding: 12px 10px;  /* 原本是 40px 20px */
-	}
-
-	/* 成功圖示 - 縮小尺寸 */
-	.completed-icon {
-	  font-size: 40px;  /* 原本是 64px */
-	  margin-bottom: 8px;  /* 原本是 16px */
-	}
-
-	/* 成功標題 - 縮小字體 */
-	.completed-title {
-	  font-size: 20px;  /* 原本是 24px */
-	  font-weight: bold;
-	  color: #28a745;
-	}
-
-	/* 資訊列 - 縮小 padding */
-	.info-row {
-	  display: flex;
-	  justify-content: space-between;
-	  padding: 8px 0;  /* 原本是 12px 0 */
-	  border-bottom: 1px solid #eee;
-	}
-
-	/* 品項列表 - 縮小 padding */
-	.items-list {
-	  background: #f8f9fa;
-	  border-radius: 8px;
-	  padding: 8px 12px;  /* 原本是 12px */
-	  margin: 8px 0;  /* 原本是 12px 0 */
-	}
-
-	.item-row {
-	  display: flex;
-	  justify-content: space-between;
-	  padding: 6px 0;  /* 原本是 8px 0 */
-	}
-
-	/* QR Code 區域 - 縮小尺寸 */
-	.qr-container {
-	  text-align: center;
-	  padding: 10px;  /* 原本是 20px */
-	}
-
-	.qr-container p {
-	  font-size: 13px;
-	  margin-bottom: 8px;
-	}
-
-	.qr-image {
-	  width: 160px;  /* 原本是 200px */
-	  height: 160px;
-	  margin: 8px auto;  /* 原本是 16px */
-	  border: 3px solid #667eea;
-	  border-radius: 10px;
-	}
-
-    
-    /* 新增包裹表單 */
-    .item-entry {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 12px;
-      margin: 8px 0;
-    }
-    
-    .item-entry-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    
-    .remove-item {
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-    }
-    
+    /* 新增品項 */
+    .item-entry { background: #f8f9fa; border-radius: 8px; padding: 10px; margin: 8px 0; }
+    .item-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .remove-item { background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; }
     .add-item-btn {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border: 2px dashed #667eea;
       border-radius: 8px;
       background: transparent;
       color: #667eea;
       font-size: 14px;
       cursor: pointer;
-      margin: 12px 0;
+      margin: 10px 0;
     }
     
     /* Loading */
-    .loading {
-      text-align: center;
-      padding: 40px;
-    }
-    
+    .loading { text-align: center; padding: 40px; }
     .spinner {
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       border: 4px solid #f3f3f3;
       border-top: 4px solid #667eea;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 0 auto 16px;
     }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     
     /* 頁面切換 */
-    .page {
-      display: none;
-    }
-    
-    .page.active {
-      display: block;
-    }
+    .page { display: none; }
+    .page.active { display: block; }
     
     /* 選單 */
-    .menu-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
+    .menu-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .menu-btn { padding: 16px; border: none; border-radius: 12px; background: #f8f9fa; cursor: pointer; }
+    .menu-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .menu-btn-icon { font-size: 28px; margin-bottom: 6px; }
+    .menu-btn-text { font-size: 13px; font-weight: 600; }
     
-    .menu-btn {
-      padding: 20px;
-      border: none;
-      border-radius: 12px;
-      background: white;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .menu-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .menu-btn-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-    
-    .menu-btn-text {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    /* 錯誤訊息 */
-    .error-message {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 12px;
-      border-radius: 8px;
-      margin: 12px 0;
-      text-align: center;
-    }
-
     /* 列印樣式 */
-    /* ========== 修正：列印樣式 ========== */
-@media print {
-  @page {
-    size: A4;
-    margin: 10mm;
-  }
-  
-  body {
-    background: white !important;
-    padding: 0 !important;
-    min-height: auto !important;
-  }
-  
-  .no-print {
-    display: none !important;
-  }
-  
-  .container {
-    max-width: 100% !important;
-  }
-  
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #ddd;
-    margin-bottom: 0 !important;
-    padding: 15px !important;
-    page-break-inside: avoid;
-  }
-  
-  .page {
-    display: none !important;
-  }
-  
-  .page.active {
-    display: block !important;
-  }
-  
-  /* 列印時更緊湊 */
-  .completed-badge {
-    padding: 8px !important;
-  }
-  
-  .completed-icon {
-    font-size: 32px !important;
-    margin-bottom: 4px !important;
-  }
-  
-  .completed-title {
-    font-size: 18px !important;
-  }
-  
-  .info-row {
-    padding: 6px 0 !important;
-  }
-  
-  .items-list {
-    padding: 6px 10px !important;
-    margin: 6px 0 !important;
-  }
-  
-  .item-row {
-    padding: 4px 0 !important;
-  }
-  
-  .qr-container {
-    padding: 8px !important;
-  }
-  
-  .qr-container p {
-    font-size: 12px !important;
-    margin-bottom: 5px !important;
-  }
-  
-  .qr-image {
-    width: 140px !important;
-    height: 140px !important;
-    margin: 5px auto !important;
-    border-width: 2px !important;
-  }
-}
+    @media print {
+      @page { size: A4; margin: 10mm; }
+      body { background: white !important; padding: 0 !important; min-height: auto !important; }
+      .no-print { display: none !important; }
+      .container { max-width: 100% !important; }
+      .card { box-shadow: none !important; border: 1px solid #ddd; margin-bottom: 0 !important; padding: 12px !important; page-break-inside: avoid; }
+      .page { display: none !important; }
+      .page.active { display: block !important; }
+      .completed-badge { padding: 6px !important; }
+      .completed-icon { font-size: 28px !important; }
+      .completed-title { font-size: 16px !important; }
+      .qr-image { width: 130px !important; height: 130px !important; }
+    }
   </style>
 </head>
 <body>
@@ -573,11 +253,11 @@
           <label class="input-label">品項明細</label>
           <div id="items-container">
             <div class="item-entry" data-index="0">
-              <div style="display: grid; grid-template-columns: 1fr 80px; gap: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 70px; gap: 6px;">
                 <input type="text" class="input-field item-model" placeholder="產品型號">
                 <input type="number" class="input-field item-quantity" placeholder="數量" min="1" value="1">
               </div>
-              <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 8px;">
+              <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 6px;">
             </div>
           </div>
           <button class="add-item-btn" onclick="addItem()">+ 新增品項</button>
@@ -600,20 +280,16 @@
           <span class="info-label">單號</span>
           <span class="info-value" id="created-order-id">-</span>
         </div>
-        
         <div class="info-row">
           <span class="info-label">廠家</span>
           <span class="info-value" id="created-partner">-</span>
         </div>
-        
         <div class="info-row">
           <span class="info-label">收件者</span>
           <span class="info-value" id="created-receiver">-</span>
         </div>
         
-        <div class="items-list" id="created-items">
-          <!-- 品項列表 -->
-        </div>
+        <div class="items-list" id="created-items"></div>
         
         <div class="qr-container">
           <p>請將此 QR Code 貼在包裹上</p>
@@ -625,9 +301,9 @@
       <div class="card no-print">
         <div class="input-group">
           <label class="input-label">寄送 Email</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="input-email-prefix" class="input-field" placeholder="輸入帳號" style="flex: 1;">
-            <span style="line-height: 48px;">@gmt.com.tw</span>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="input-email-prefix" class="input-field" placeholder="帳號" style="flex: 1;">
+            <span style="line-height: 44px; font-size: 14px;">@gmt.com.tw</span>
           </div>
         </div>
         
@@ -641,12 +317,10 @@
     <div id="page-query" class="page">
       <div class="card">
         <div class="card-title">🔍 查詢包裹</div>
-        
         <div class="input-group">
           <label class="input-label">輸入單號</label>
           <input type="text" id="input-query-order" class="input-field" placeholder="例如：20251128-143022">
         </div>
-        
         <button class="btn btn-primary" onclick="queryPackage()">查詢</button>
         <button class="btn btn-secondary" onclick="showPage('menu')">返回</button>
       </div>
@@ -666,20 +340,15 @@
           <span class="info-value" id="sign-partner">-</span>
         </div>
         
-        <div class="items-list" id="sign-items">
-          <!-- 品項列表 -->
-        </div>
+        <div class="items-list" id="sign-items"></div>
         
-        <!-- 進度（可點擊選擇） -->
-        <div class="progress-container" id="sign-progress">
-          <!-- 動態產生 -->
-        </div>
+        <div class="card-title" style="margin-top: 12px;">📍 簽收進度（點擊選擇）</div>
+        <div id="sign-progress"></div>
         
-        <!-- 姓名輸入 -->
-        <div class="input-group" id="name-input-group">
+        <div class="input-group" id="name-input-group" style="display: none;">
           <label class="input-label">您的姓名</label>
           <input type="text" id="input-signer-name" class="input-field" placeholder="請輸入姓名">
-          <p class="input-hint" id="name-hint"></p>
+          <div class="input-hint" id="name-hint"></div>
         </div>
         
         <button class="btn btn-primary" id="btn-confirm-sign" onclick="confirmSign()">確認簽收</button>
@@ -687,120 +356,81 @@
       </div>
     </div>
     
-    <!-- 簽收完成 -->
+    <!-- 簽收成功 -->
     <div id="page-sign-complete" class="page">
       <div class="card">
         <div class="completed-badge">
-          <div class="completed-icon">🎉</div>
+          <div class="completed-icon">✅</div>
           <div class="completed-title" id="sign-complete-title">簽收成功！</div>
         </div>
-        
-        <div id="sign-complete-details">
-          <!-- 動態內容 -->
-        </div>
-        
-        <button class="btn btn-primary" onclick="showPage('menu')">完成</button>
+        <div id="sign-complete-details"></div>
+        <button class="btn btn-primary" onclick="showPage('menu')">返回首頁</button>
       </div>
     </div>
     
-    <!-- 已完成頁面 -->
+    <!-- 已完成 -->
     <div id="page-completed" class="page">
       <div class="card">
         <div class="completed-badge">
-          <div class="completed-icon">✅</div>
-          <div class="completed-title">此包裹已完成簽收</div>
+          <div class="completed-icon">🎉</div>
+          <div class="completed-title">物流已完成！</div>
         </div>
-        
-        <div id="completed-details">
-          <!-- 動態內容 -->
-        </div>
-        
-        <button class="btn btn-primary" onclick="showPage('menu')">返回主選單</button>
+        <div id="completed-details"></div>
+        <button class="btn btn-primary" onclick="showPage('menu')">返回首頁</button>
+      </div>
+    </div>
+    
+    <!-- 歷史紀錄 -->
+    <div id="page-history" class="page">
+      <div class="card">
+        <div class="card-title">📋 簽收紀錄</div>
+        <p style="text-align: center; color: #666; padding: 20px;">功能開發中...</p>
+        <button class="btn btn-secondary" onclick="showPage('menu')">返回</button>
       </div>
     </div>
     
   </div>
 
   <script>
-    // ╔════════════════════════════════════════════════════════════════╗
-    // ║                      🔧 系統設定區                              ║
-    // ╠════════════════════════════════════════════════════════════════╣
-    // ║  REQUIRE_LOGIN_FOR_CREATE: 建立包裹時是否需要 LINE 登入         ║
-    // ║    - true  = 需要登入（記錄建立者 LINE ID 和名稱）              ║
-    // ║    - false = 免登入                                            ║
-    // ║                                                                ║
-    // ║  REQUIRE_LOGIN_FOR_SIGN: 簽收時是否需要 LINE 登入              ║
-    // ║    - true  = 需要登入（可記住使用者姓名，追蹤 LINE ID）          ║
-    // ║    - false = 免登入（任何人掃碼即可使用）                        ║
-    // ║                                                                ║
-    // ║  REQUIRE_NAME: 簽收時是否需要輸入姓名                           ║
-    // ║    - true  = 需要輸入姓名                                      ║
-    // ║    - false = 不需要輸入姓名（自動填入角色名稱）                  ║
-    // ╚════════════════════════════════════════════════════════════════╝
-    
-    const SETTINGS = {
-      REQUIRE_LOGIN_FOR_CREATE: true,   // 建立包裹需要 LINE 登入
-      REQUIRE_LOGIN_FOR_SIGN: false,    // 簽收不需要登入
-      REQUIRE_NAME: false               // 簽收不需要輸入姓名
-    };
-    
-    // ============ 基本設定 ============
+    // ============ 設定 ============
     const CONFIG = {
-      LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbyByXF_4sE7eFYCL5a3wf1J44T_JHmJ-5m_qu-OqqnPQpD0OtNrLBpNCWoGzITNBzKC/exec'
+      LIFF_ID: '2007129498-bJPbx98E',
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbxGD9Zyx1GxGncySXZL7DrAn65syz8TzI3n6AierdJ0G32AxmNJJncI4h6xJR4fxEbR/exec'
     };
-    
-    // ============ 全域變數 ============
-    let currentUser = {
-      lineUserId: null,
-      name: '',
-      preferredRole: ''
+
+    const SETTINGS = {
+      REQUIRE_NAME: false  // 是否需要輸入簽收者姓名
     };
-    
+
+    // 全域變數
+    let currentUser = { lineUserId: '', name: '', preferredRole: '' };
     let currentPackage = null;
     let currentSignStatus = null;
     let selectedRole = null;
-    
+    let itemIndex = 1;
+
     // ============ LIFF 初始化 ============
     async function initializeLiff() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         
-        // 檢查是否從 QR Code 進入（帶有 orderId 參數）
+        // 檢查 URL 參數
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('orderId');
         
-        // 判斷是否需要登入
-        const needsLogin = orderId ? SETTINGS.REQUIRE_LOGIN_FOR_SIGN : SETTINGS.REQUIRE_LOGIN_FOR_CREATE;
-        
-        if (needsLogin) {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-            return;
+        if (liff.isLoggedIn()) {
+          try {
+            const profile = await liff.getProfile();
+            currentUser.lineUserId = profile.userId;
+            currentUser.name = profile.displayName;
+          } catch (e) {
+            console.log('無法取得 LINE 資訊');
+            currentUser.lineUserId = 'anonymous_' + Date.now();
+            currentUser.name = '訪客';
           }
-          
-          // 取得使用者資訊
-          const profile = await liff.getProfile();
-          currentUser.lineUserId = profile.userId;
-          currentUser.name = profile.displayName;
-          
-          // 從後端取得使用者記錄
-          await loadUserInfo();
         } else {
-          // 免登入模式：產生匿名 ID
           currentUser.lineUserId = 'anonymous_' + Date.now();
-          currentUser.name = '';
-          
-          // 如果已登入，還是可以取得資訊
-          if (liff.isLoggedIn()) {
-            try {
-              const profile = await liff.getProfile();
-              currentUser.lineUserId = profile.userId;
-              currentUser.name = profile.displayName;
-            } catch (e) {
-              console.log('無法取得 LINE 資訊，使用匿名模式');
-            }
-          }
+          currentUser.name = '訪客';
         }
         
         if (orderId) {
@@ -811,199 +441,134 @@
         
       } catch (error) {
         console.error('LIFF 初始化失敗:', error);
-        // 開發測試用：不在 LINE 環境
-        currentUser.lineUserId = 'test_user_' + Date.now();
+        currentUser.lineUserId = 'test_' + Date.now();
         currentUser.name = '測試用戶';
         showPage('menu');
       }
     }
-    
+
     // ============ 頁面控制 ============
     function showPage(pageId) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById('page-' + pageId).classList.add('active');
       
       if (pageId === 'menu') {
-        // 根據設定顯示歡迎訊息
         const welcomeEl = document.getElementById('welcome-message');
-        if (currentUser.name) {
-          welcomeEl.textContent = `歡迎，${currentUser.name}！`;
-        } else {
-          welcomeEl.textContent = '歡迎使用！';
-        }
+        welcomeEl.textContent = currentUser.name ? `歡迎，${currentUser.name}！` : '歡迎使用！';
       }
       
       if (pageId === 'sign') {
-        // 根據設定顯示/隱藏姓名輸入框
         const nameGroup = document.getElementById('name-input-group');
-        if (SETTINGS.REQUIRE_NAME) {
-          nameGroup.style.display = 'block';
-        } else {
-          nameGroup.style.display = 'none';
-        }
+        nameGroup.style.display = SETTINGS.REQUIRE_NAME ? 'block' : 'none';
       }
     }
-    
-    // ============ API 呼叫 ============
-    async function apiGet(action, params = {}) {
-	  return new Promise((resolve, reject) => {
-		// 建立唯一的 callback 名稱（避免衝突）
-		const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-		
-		// 建立 URL
-		const url = new URL(CONFIG.GAS_URL);
-		url.searchParams.set('action', action);
-		url.searchParams.set('callback', callbackName);  // 關鍵：告訴伺服器 callback 名稱
-		
-		// 將其他參數加入 URL
-		Object.keys(params).forEach(key => {
-		  const value = params[key];
-		  if (typeof value === 'object') {
-			url.searchParams.set(key, JSON.stringify(value));
-		  } else {
-			url.searchParams.set(key, value);
-		  }
-		});
-		
-		console.log('API Request:', url.toString());
-		
-		// 設定超時（30 秒）
-		const timeout = setTimeout(() => {
-		  cleanup();
-		  reject(new Error('請求超時'));
-		}, 30000);
-		
-		// 清理函數
-		const cleanup = () => {
-		  clearTimeout(timeout);
-		  delete window[callbackName];
-		  if (script && script.parentNode) {
-			script.parentNode.removeChild(script);
-		  }
-		};
-		
-		// 設定全域 callback 函數
-		window[callbackName] = (data) => {
-		  console.log('API Response:', data);
-		  cleanup();
-		  resolve(data);
-		};
-		
-		// 建立並插入 script 標籤
-		const script = document.createElement('script');
-		script.src = url.toString();
-		script.onerror = () => {
-		  cleanup();
-		  reject(new Error('網路請求失敗'));
-		};
-		
-		document.head.appendChild(script);
-	  });
-	}
-    
-    async function apiPost(action, data) {
-	  // 將所有資料作為參數傳送
-	  const params = {};
-	  Object.keys(data).forEach(key => {
-		const value = data[key];
-		if (typeof value === 'object') {
-		  params[key] = JSON.stringify(value);
-		} else {
-		  params[key] = value;
-		}
-	  });
-	  
-	  return await apiGet(action, params);
-	}
-      
-      console.log('API POST URL:', url.toString());
-      
-      try {
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          redirect: 'follow'
+
+    // ============ API 呼叫（JSONP）============
+    function apiGet(action, params = {}) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        const url = new URL(CONFIG.GAS_URL);
+        url.searchParams.set('action', action);
+        url.searchParams.set('callback', callbackName);
+        
+        Object.keys(params).forEach(key => {
+          const value = params[key];
+          if (typeof value === 'object') {
+            url.searchParams.set(key, JSON.stringify(value));
+          } else {
+            url.searchParams.set(key, value);
+          }
         });
-        return await response.json();
-      } catch (error) {
-        console.error('API POST Error:', error);
-        throw error;
-      }
+        
+        console.log('API Request:', url.toString());
+        
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error('請求超時'));
+        }, 30000);
+        
+        let script;
+        
+        const cleanup = () => {
+          clearTimeout(timeout);
+          delete window[callbackName];
+          if (script && script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        };
+        
+        window[callbackName] = (data) => {
+          console.log('API Response:', data);
+          cleanup();
+          resolve(data);
+        };
+        
+        script = document.createElement('script');
+        script.src = url.toString();
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('網路請求失敗'));
+        };
+        
+        document.head.appendChild(script);
+      });
     }
-    
-    // ============ 使用者資訊 ============
-    async function loadUserInfo() {
-      if (!currentUser.lineUserId || currentUser.lineUserId.startsWith('anonymous_')) return;
-      
-      try {
-        const result = await apiGet('getUserInfo', { lineUserId: currentUser.lineUserId });
-        if (result.name) {
-          currentUser.name = result.name;
-          currentUser.preferredRole = result.preferredRole;
-        }
-      } catch (error) {
-        console.error('載入使用者資訊失敗:', error);
-      }
+
+    function apiPost(action, data) {
+      const params = {};
+      Object.keys(data).forEach(key => {
+        const value = data[key];
+        params[key] = typeof value === 'object' ? JSON.stringify(value) : value;
+      });
+      return apiGet(action, params);
     }
-    
+
     // ============ 建立包裹 ============
-    let itemCount = 1;
-    
     function addItem() {
       const container = document.getElementById('items-container');
       const newItem = document.createElement('div');
       newItem.className = 'item-entry';
-      newItem.dataset.index = itemCount;
+      newItem.dataset.index = itemIndex;
       newItem.innerHTML = `
         <div class="item-entry-header">
-          <span>品項 ${itemCount + 1}</span>
-          <button class="remove-item" onclick="removeItem(this)">×</button>
+          <span>品項 ${itemIndex + 1}</span>
+          <button class="remove-item" onclick="removeItem(${itemIndex})">×</button>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 8px;">
+        <div style="display: grid; grid-template-columns: 1fr 70px; gap: 6px;">
           <input type="text" class="input-field item-model" placeholder="產品型號">
           <input type="number" class="input-field item-quantity" placeholder="數量" min="1" value="1">
         </div>
-        <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 8px;">
+        <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 6px;">
       `;
       container.appendChild(newItem);
-      itemCount++;
+      itemIndex++;
     }
-    
-    function removeItem(btn) {
-      btn.closest('.item-entry').remove();
+
+    function removeItem(index) {
+      const item = document.querySelector(`.item-entry[data-index="${index}"]`);
+      if (item) item.remove();
     }
-    
-    // 儲存最後建立的包裹資訊（用於列印和 Email）
-    let lastCreatedPackage = null;
 
     async function createPackage() {
-      // 檢查是否需要登入
-      if (SETTINGS.REQUIRE_LOGIN_FOR_CREATE && !liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
-      
       const partner = document.getElementById('input-partner').value.trim();
       const receiver = document.getElementById('input-receiver').value.trim();
       
       if (!partner || !receiver) {
-        alert('請填寫合作夥伴和收件者');
+        alert('請填寫廠家和收件者');
         return;
       }
       
-      // 收集所有品項
       const items = [];
       document.querySelectorAll('.item-entry').forEach(entry => {
         const model = entry.querySelector('.item-model').value.trim();
         const quantity = parseInt(entry.querySelector('.item-quantity').value) || 1;
         const accessory = entry.querySelector('.item-accessory').value.trim();
-        
-        if (model) {
-          items.push({ model, quantity, accessory });
-        }
+        if (model) items.push({ model, quantity, accessory });
       });
       
       if (items.length === 0) {
-        alert('請至少填寫一個產品型號');
+        alert('請至少填寫一個品項');
         return;
       }
       
@@ -1011,30 +576,18 @@
       
       try {
         const result = await apiPost('createPackage', {
-          partner,
-          receiver,
-          items,
+          partner, receiver, items,
           lineUserId: currentUser.lineUserId,
           lineName: currentUser.name
         });
         
         if (result.success) {
-          // 儲存建立的包裹資訊
-          lastCreatedPackage = {
-            orderId: result.orderId,
-            partner: partner,
-            receiver: receiver,
-            items: items,
-            qrCodeUrl: result.qrCodeUrl
-          };
+          currentPackage = { orderId: result.orderId, partner, receiver, items, qrCodeUrl: result.qrCodeUrl };
           
-          // 顯示資訊
           document.getElementById('created-order-id').textContent = result.orderId;
           document.getElementById('created-partner').textContent = partner;
           document.getElementById('created-receiver').textContent = receiver;
-          document.getElementById('created-qr-image').src = result.qrCodeUrl;
           
-          // 顯示品項
           const itemsHtml = items.map(item => `
             <div class="item-row">
               <span>${item.model}${item.accessory ? ' (' + item.accessory + ')' : ''}</span>
@@ -1042,6 +595,7 @@
             </div>
           `).join('');
           document.getElementById('created-items').innerHTML = itemsHtml;
+          document.getElementById('created-qr-image').src = result.qrCodeUrl;
           
           showPage('created');
           
@@ -1050,14 +604,14 @@
           document.getElementById('input-receiver').value = '';
           document.getElementById('items-container').innerHTML = `
             <div class="item-entry" data-index="0">
-              <div style="display: grid; grid-template-columns: 1fr 80px; gap: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 70px; gap: 6px;">
                 <input type="text" class="input-field item-model" placeholder="產品型號">
                 <input type="number" class="input-field item-quantity" placeholder="數量" min="1" value="1">
               </div>
-              <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 8px;">
+              <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 6px;">
             </div>
           `;
-          itemCount = 1;
+          itemIndex = 1;
         } else {
           alert('建立失敗：' + result.error);
           showPage('create');
@@ -1067,55 +621,43 @@
         showPage('create');
       }
     }
-    
-    // 列印功能
-    function printPage() {
-      window.print();
-    }
-    
-    // 寄送 Email 功能
+
+    // ============ Email ============
     async function sendEmail() {
-      const emailPrefix = document.getElementById('input-email-prefix').value.trim();
-      
-      if (!emailPrefix) {
+      const prefix = document.getElementById('input-email-prefix').value.trim();
+      if (!prefix) {
         alert('請輸入 Email 帳號');
         return;
       }
       
-      const toEmail = emailPrefix + '@gmt.com.tw';
-      
-      if (!lastCreatedPackage) {
-        alert('找不到包裹資訊');
-        return;
-      }
+      const toEmail = prefix + '@gmt.com.tw';
       
       try {
         const result = await apiPost('sendPackageEmail', {
-          toEmail: toEmail,
-          orderId: lastCreatedPackage.orderId,
-          partner: lastCreatedPackage.partner,
-          receiver: lastCreatedPackage.receiver,
-          items: lastCreatedPackage.items,
-          qrCodeUrl: lastCreatedPackage.qrCodeUrl
+          toEmail,
+          orderId: currentPackage.orderId,
+          partner: currentPackage.partner,
+          receiver: currentPackage.receiver,
+          items: currentPackage.items,
+          qrCodeUrl: currentPackage.qrCodeUrl
         });
         
-        if (result.success) {
-          alert('Email 已寄出至 ' + toEmail);
-        } else {
-          alert('寄送失敗：' + result.error);
-        }
+        alert(result.success ? 'Email 已寄出！' : '寄送失敗：' + result.error);
       } catch (error) {
-        alert('寄送錯誤：' + error.message);
+        alert('發生錯誤：' + error.message);
       }
     }
-    
+
+    function printPage() {
+      window.print();
+    }
+
     // ============ 掃碼 ============
     async function startScan() {
       try {
         if (liff.scanCodeV2) {
           const result = await liff.scanCodeV2();
           if (result.value) {
-            // 解析 QR Code 內容
             const url = new URL(result.value);
             const orderId = url.searchParams.get('orderId');
             if (orderId) {
@@ -1125,23 +667,17 @@
             }
           }
         } else {
-          // 開發測試用
           const orderId = prompt('請輸入單號（測試用）：');
-          if (orderId) {
-            await loadPackageForSign(orderId);
-          }
+          if (orderId) await loadPackageForSign(orderId);
         }
       } catch (error) {
         console.error('掃碼失敗:', error);
-        // 如果掃碼失敗，提供手動輸入選項
         const orderId = prompt('掃碼失敗，請手動輸入單號：');
-        if (orderId) {
-          await loadPackageForSign(orderId);
-        }
+        if (orderId) await loadPackageForSign(orderId);
       }
     }
-    
-    // ============ 查詢包裹 ============
+
+    // ============ 查詢 ============
     async function queryPackage() {
       const orderId = document.getElementById('input-query-order').value.trim();
       if (!orderId) {
@@ -1150,13 +686,12 @@
       }
       await loadPackageForSign(orderId);
     }
-    
+
     // ============ 簽收流程 ============
     async function loadPackageForSign(orderId) {
       showPage('loading');
       
       try {
-        // 取得包裹資訊
         const packageInfo = await apiGet('getPackageInfo', { orderId });
         if (packageInfo.error) {
           alert(packageInfo.error);
@@ -1164,7 +699,6 @@
           return;
         }
         
-        // 取得簽收狀態
         const signStatus = await apiGet('getSignStatus', { orderId });
         if (signStatus.error) {
           alert(signStatus.error);
@@ -1175,27 +709,22 @@
         currentPackage = packageInfo;
         currentSignStatus = signStatus;
         
-        // 檢查是否已完成
         if (signStatus.nextRole === 'completed') {
           showCompletedPage();
           return;
         }
         
-        // 顯示簽收頁面
         renderSignPage();
-        
       } catch (error) {
         alert('載入失敗：' + error.message);
         showPage('menu');
       }
     }
-    
+
     function renderSignPage() {
-      // 基本資訊
       document.getElementById('sign-order-id').textContent = currentPackage.orderId;
       document.getElementById('sign-partner').textContent = currentPackage.partner;
       
-      // 品項列表
       const itemsHtml = currentPackage.items.map(item => `
         <div class="item-row">
           <span>${item.model}${item.accessory ? ' (' + item.accessory + ')' : ''}</span>
@@ -1204,24 +733,16 @@
       `).join('');
       document.getElementById('sign-items').innerHTML = itemsHtml;
       
-      // 預設選擇下一個該簽收的角色
       selectedRole = currentSignStatus.nextRole;
+      document.getElementById('sign-progress').innerHTML = renderProgress();
       
-      // 進度列（可點擊選擇）
-      const progressHtml = renderProgress();
-      document.getElementById('sign-progress').innerHTML = progressHtml;
-      
-      // 姓名處理（只在需要時顯示）
       if (SETTINGS.REQUIRE_NAME) {
         document.getElementById('input-signer-name').value = currentUser.name || '';
-        if (currentUser.preferredRole) {
-          document.getElementById('name-hint').textContent = `💡 系統已記住您的姓名`;
-        }
       }
       
       showPage('sign');
     }
-    
+
     function renderProgress() {
       const steps = [
         { key: 'driver', icon: '🚚', name: '司機', data: currentSignStatus.driver },
@@ -1233,11 +754,8 @@
         const isCompleted = step.data.name !== '';
         const isAvailable = currentSignStatus.availableRoles.includes(step.key);
         const isSelected = selectedRole === step.key;
-        const isDisabled = isCompleted || !isAvailable;
         
-        let statusClass = '';
-        let detail = '等待中';
-        let clickHandler = '';
+        let statusClass = '', detail = '等待中', clickHandler = '';
         
         if (isCompleted) {
           statusClass = 'completed disabled';
@@ -1252,11 +770,10 @@
           clickHandler = `onclick="selectRole('${step.key}')"`;
         } else {
           statusClass = 'disabled';
-          detail = '等待中';
         }
         
         return `
-          <div class="progress-step ${statusClass}" data-role="${step.key}" ${clickHandler}>
+          <div class="progress-step ${statusClass}" ${clickHandler}>
             <div class="step-icon ${isCompleted ? 'completed' : (isSelected ? 'current' : 'pending')}">${isCompleted ? '✓' : step.icon}</div>
             <div class="step-info">
               <div class="step-title">${step.name}</div>
@@ -1266,28 +783,21 @@
         `;
       }).join('');
     }
-    
+
     function selectRole(role) {
       selectedRole = role;
-      // 重新渲染進度列
-      const progressHtml = renderProgress();
-      document.getElementById('sign-progress').innerHTML = progressHtml;
+      document.getElementById('sign-progress').innerHTML = renderProgress();
     }
-    
+
     async function confirmSign() {
-      // 根據設定決定姓名
-      let name = '';
       const roleNames = { driver: '司機', warehouse: '庫房', engineer: '工程師' };
+      let name = SETTINGS.REQUIRE_NAME 
+        ? document.getElementById('input-signer-name').value.trim() 
+        : roleNames[selectedRole];
       
-      if (SETTINGS.REQUIRE_NAME) {
-        name = document.getElementById('input-signer-name').value.trim();
-        if (!name) {
-          alert('請輸入您的姓名');
-          return;
-        }
-      } else {
-        // 不需要姓名時，使用角色名稱
-        name = roleNames[selectedRole];
+      if (SETTINGS.REQUIRE_NAME && !name) {
+        alert('請輸入您的姓名');
+        return;
       }
       
       if (!selectedRole) {
@@ -1306,106 +816,59 @@
         });
         
         if (result.success) {
-          // 更新使用者姓名（僅在需要時）
-          if (SETTINGS.REQUIRE_NAME) {
-            currentUser.name = name;
-          }
+          document.getElementById('sign-complete-title').textContent = `${roleNames[selectedRole]}簽收成功！`;
           
-          // 顯示成功頁面
-          document.getElementById('sign-complete-title').textContent = 
-            `${roleNames[selectedRole]}簽收成功！`;
+          let detailsHtml = `<div class="info-row"><span class="info-label">單號</span><span class="info-value">${currentPackage.orderId}</span></div>`;
           
-          // 顯示詳情
-          let detailsHtml = `
-            <div class="info-row">
-              <span class="info-label">單號</span>
-              <span class="info-value">${currentPackage.orderId}</span>
-            </div>
-          `;
-          
-          // 如果有輸入姓名才顯示
-          if (SETTINGS.REQUIRE_NAME) {
-            detailsHtml += `
-              <div class="info-row">
-                <span class="info-label">簽收者</span>
-                <span class="info-value">${name}</span>
-              </div>
-            `;
-          }
-          
-          // 判斷下一站
           const nextRole = result.status.nextRole;
-          
           if (nextRole === 'completed') {
-            detailsHtml += `
-              <div style="text-align: center; margin-top: 20px; color: #28a745;">
-                <div style="font-size: 32px;">🎉</div>
-                <div>物流追蹤已完成！</div>
-              </div>
-            `;
+            detailsHtml += `<div style="text-align: center; margin-top: 20px; color: #28a745;"><div style="font-size: 32px;">🎉</div><div>物流追蹤已完成！</div></div>`;
           } else {
-            const nextRoleNames = { driver: '司機', warehouse: '庫房', engineer: '工程師' };
-            detailsHtml += `
-              <div style="text-align: center; margin-top: 20px; color: #667eea;">
-                <div>📍 下一站：${nextRoleNames[nextRole]}</div>
-              </div>
-            `;
+            detailsHtml += `<div style="text-align: center; margin-top: 20px; color: #667eea;"><div>📍 下一站：${roleNames[nextRole]}</div></div>`;
           }
           
           document.getElementById('sign-complete-details').innerHTML = detailsHtml;
           showPage('sign-complete');
-          
         } else {
           alert('簽收失敗：' + result.error);
         }
-        
       } catch (error) {
         alert('發生錯誤：' + error.message);
       }
       
       document.getElementById('btn-confirm-sign').disabled = false;
     }
-    
+
     function showCompletedPage() {
       let detailsHtml = `
-        <div class="info-row">
-          <span class="info-label">單號</span>
-          <span class="info-value">${currentPackage.orderId}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">廠家</span>
-          <span class="info-value">${currentPackage.partner}</span>
-        </div>
-        <hr style="margin: 16px 0; border: none; border-top: 1px solid #eee;">
+        <div class="info-row"><span class="info-label">單號</span><span class="info-value">${currentPackage.orderId}</span></div>
+        <div class="info-row"><span class="info-label">廠家</span><span class="info-value">${currentPackage.partner}</span></div>
+        <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
         <div class="card-title">📍 簽收歷程</div>
-        <div class="progress-step completed">
-          <div class="step-icon completed">✓</div>
-          <div class="step-info">
-            <div class="step-title">🚚 司機</div>
-            <div class="step-detail">${currentSignStatus.driver.name} (${formatTime(currentSignStatus.driver.time)})</div>
-          </div>
-        </div>
-        <div class="progress-step completed">
-          <div class="step-icon completed">✓</div>
-          <div class="step-info">
-            <div class="step-title">🏭 庫房</div>
-            <div class="step-detail">${currentSignStatus.warehouse.name} (${formatTime(currentSignStatus.warehouse.time)})</div>
-          </div>
-        </div>
-        <div class="progress-step completed">
-          <div class="step-icon completed">✓</div>
-          <div class="step-info">
-            <div class="step-title">👷 工程師</div>
-            <div class="step-detail">${currentSignStatus.engineer.name} (${formatTime(currentSignStatus.engineer.time)})</div>
-          </div>
-        </div>
       `;
+      
+      const roles = [
+        { key: 'driver', icon: '🚚', name: '司機', data: currentSignStatus.driver },
+        { key: 'warehouse', icon: '🏭', name: '庫房', data: currentSignStatus.warehouse },
+        { key: 'engineer', icon: '👷', name: '工程師', data: currentSignStatus.engineer }
+      ];
+      
+      roles.forEach(r => {
+        detailsHtml += `
+          <div class="progress-step completed">
+            <div class="step-icon completed">✓</div>
+            <div class="step-info">
+              <div class="step-title">${r.icon} ${r.name}</div>
+              <div class="step-detail">${r.data.name} (${formatTime(r.data.time)})</div>
+            </div>
+          </div>
+        `;
+      });
       
       document.getElementById('completed-details').innerHTML = detailsHtml;
       showPage('completed');
     }
-    
-    // ============ 工具函數 ============
+
     function formatTime(dateStr) {
       if (!dateStr) return '-';
       try {
@@ -1415,7 +878,7 @@
         return '-';
       }
     }
-    
+
     // ============ 啟動 ============
     document.addEventListener('DOMContentLoaded', initializeLiff);
   </script>
