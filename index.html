@@ -576,7 +576,11 @@
     // ╔════════════════════════════════════════════════════════════════╗
     // ║                      🔧 系統設定區                              ║
     // ╠════════════════════════════════════════════════════════════════╣
-    // ║  REQUIRE_LOGIN: 是否需要 LINE 登入                             ║
+    // ║  REQUIRE_LOGIN_FOR_CREATE: 建立包裹時是否需要 LINE 登入         ║
+    // ║    - true  = 需要登入（記錄建立者 LINE ID 和名稱）              ║
+    // ║    - false = 免登入                                            ║
+    // ║                                                                ║
+    // ║  REQUIRE_LOGIN_FOR_SIGN: 簽收時是否需要 LINE 登入              ║
     // ║    - true  = 需要登入（可記住使用者姓名，追蹤 LINE ID）          ║
     // ║    - false = 免登入（任何人掃碼即可使用）                        ║
     // ║                                                                ║
@@ -586,14 +590,15 @@
     // ╚════════════════════════════════════════════════════════════════╝
     
     const SETTINGS = {
-      REQUIRE_LOGIN: false,   // 改成 true = 需要 LINE 登入
-      REQUIRE_NAME: false     // 改成 true = 需要輸入姓名
+      REQUIRE_LOGIN_FOR_CREATE: true,   // 建立包裹需要 LINE 登入
+      REQUIRE_LOGIN_FOR_SIGN: false,    // 簽收不需要登入
+      REQUIRE_NAME: false               // 簽收不需要輸入姓名
     };
     
     // ============ 基本設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbzKwTqPc_pJCXr6nma2gq964AmZ4-FWTaluUwzPfWvJ2tiGP-bn7czpLTkNMEF2PHRo/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbyUQYTx_pYDd_3Td98gjyr_jOnjO21ZiKchTowORAOhhaZRnyl5-_iTz8e8YdeohbY2/exec'
     };
     
     // ============ 全域變數 ============
@@ -612,8 +617,14 @@
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         
-        // 根據設定決定是否需要登入
-        if (SETTINGS.REQUIRE_LOGIN) {
+        // 檢查是否從 QR Code 進入（帶有 orderId 參數）
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+        
+        // 判斷是否需要登入
+        const needsLogin = orderId ? SETTINGS.REQUIRE_LOGIN_FOR_SIGN : SETTINGS.REQUIRE_LOGIN_FOR_CREATE;
+        
+        if (needsLogin) {
           if (!liff.isLoggedIn()) {
             liff.login();
             return;
@@ -643,10 +654,6 @@
           }
         }
         
-        // 檢查是否從 QR Code 進入（帶有 orderId 參數）
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('orderId');
-        
         if (orderId) {
           await loadPackageForSign(orderId);
         } else {
@@ -670,7 +677,7 @@
       if (pageId === 'menu') {
         // 根據設定顯示歡迎訊息
         const welcomeEl = document.getElementById('welcome-message');
-        if (SETTINGS.REQUIRE_LOGIN && currentUser.name) {
+        if (currentUser.name) {
           welcomeEl.textContent = `歡迎，${currentUser.name}！`;
         } else {
           welcomeEl.textContent = '歡迎使用！';
@@ -726,7 +733,7 @@
     
     // ============ 使用者資訊 ============
     async function loadUserInfo() {
-      if (!SETTINGS.REQUIRE_LOGIN) return;
+      if (!currentUser.lineUserId || currentUser.lineUserId.startsWith('anonymous_')) return;
       
       try {
         const result = await apiGet('getUserInfo', { lineUserId: currentUser.lineUserId });
@@ -767,6 +774,12 @@
     }
     
     async function createPackage() {
+      // 檢查是否需要登入
+      if (SETTINGS.REQUIRE_LOGIN_FOR_CREATE && !liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+      
       const partner = document.getElementById('input-partner').value.trim();
       const receiver = document.getElementById('input-receiver').value.trim();
       
@@ -799,7 +812,8 @@
           partner,
           receiver,
           items,
-          lineUserId: currentUser.lineUserId
+          lineUserId: currentUser.lineUserId,
+          lineName: currentUser.name  // 新增：LINE 顯示名稱
         });
         
         if (result.success) {
