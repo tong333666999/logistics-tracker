@@ -658,7 +658,7 @@
     // ============ 基本設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbys_yGoWL_dEH7k3h_BwA1ke8ZkltWNH9fXwPRqRdW2KVzb-Z5QSaauZDdTuvdZ6hh4/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbyiUaQwXHZF6tHfYYTm3Kin2owGeEwkHCx_4_oVPF5TAJHo4SYuThI1ljVPhESar0WE/exec'
     };
     
     // ============ 全域變數 ============
@@ -757,36 +757,75 @@
     
     // ============ API 呼叫 ============
     async function apiGet(action, params = {}) {
-      const url = new URL(CONFIG.GAS_URL);
-      url.searchParams.set('action', action);
-      Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
-      
-      try {
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          redirect: 'follow'
-        });
-        return await response.json();
-      } catch (error) {
-        console.error('API GET Error:', error);
-        throw error;
-      }
-    }
+	  return new Promise((resolve, reject) => {
+		// 建立唯一的 callback 名稱（避免衝突）
+		const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+		
+		// 建立 URL
+		const url = new URL(CONFIG.GAS_URL);
+		url.searchParams.set('action', action);
+		url.searchParams.set('callback', callbackName);  // 關鍵：告訴伺服器 callback 名稱
+		
+		// 將其他參數加入 URL
+		Object.keys(params).forEach(key => {
+		  const value = params[key];
+		  if (typeof value === 'object') {
+			url.searchParams.set(key, JSON.stringify(value));
+		  } else {
+			url.searchParams.set(key, value);
+		  }
+		});
+		
+		console.log('API Request:', url.toString());
+		
+		// 設定超時（30 秒）
+		const timeout = setTimeout(() => {
+		  cleanup();
+		  reject(new Error('請求超時'));
+		}, 30000);
+		
+		// 清理函數
+		const cleanup = () => {
+		  clearTimeout(timeout);
+		  delete window[callbackName];
+		  if (script && script.parentNode) {
+			script.parentNode.removeChild(script);
+		  }
+		};
+		
+		// 設定全域 callback 函數
+		window[callbackName] = (data) => {
+		  console.log('API Response:', data);
+		  cleanup();
+		  resolve(data);
+		};
+		
+		// 建立並插入 script 標籤
+		const script = document.createElement('script');
+		script.src = url.toString();
+		script.onerror = () => {
+		  cleanup();
+		  reject(new Error('網路請求失敗'));
+		};
+		
+		document.head.appendChild(script);
+	  });
+	}
     
     async function apiPost(action, data) {
-      // 使用 GET 方式傳送資料（避免 CORS 問題）
-      const url = new URL(CONFIG.GAS_URL);
-      url.searchParams.set('action', action);
-      
-      // 將資料轉成 URL 參數
-      Object.keys(data).forEach(key => {
-        const value = data[key];
-        if (typeof value === 'object') {
-          url.searchParams.set(key, JSON.stringify(value));
-        } else {
-          url.searchParams.set(key, value);
-        }
-      });
+	  // 將所有資料作為參數傳送
+	  const params = {};
+	  Object.keys(data).forEach(key => {
+		const value = data[key];
+		if (typeof value === 'object') {
+		  params[key] = JSON.stringify(value);
+		} else {
+		  params[key] = value;
+		}
+	  });
+	  
+	  return await apiGet(action, params);
+	}
       
       console.log('API POST URL:', url.toString());
       
