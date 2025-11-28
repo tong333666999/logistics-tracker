@@ -219,11 +219,58 @@
       outline: none;
       border-color: #667eea;
     }
-    
+
     .input-hint {
       font-size: 12px;
       color: #666;
       margin-top: 4px;
+    }
+
+    .email-card {
+      border: 1px dashed #c7d2fe;
+      border-radius: 12px;
+      padding: 16px;
+      background: #f5f7ff;
+    }
+
+    .email-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .email-chip {
+      background: #e0e7ff;
+      color: #4338ca;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .email-input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .email-suffix {
+      padding: 12px 14px;
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .email-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
     }
     
     /* 按鈕 */
@@ -530,20 +577,38 @@
           <p>請將此 QR Code 貼在包裹上</p>
           <img id="created-qr-image" class="qr-image" src="" alt="QR Code">
         </div>
-      </div>
-      
-      <!-- 按鈕區（列印時隱藏） -->
-      <div class="card no-print">
-        <div class="input-group">
-          <label class="input-label">寄送 Email</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="input-email-prefix" class="input-field" placeholder="輸入帳號" style="flex: 1;">
-            <span style="line-height: 48px;">@gmt.com.tw</span>
+
+        <!-- 寄送 Email（直接放在成功卡片內，避免被忽略） -->
+        <div class="input-group no-print email-card">
+          <div class="email-card-header">
+            <div>
+              <div class="input-label" style="margin-bottom: 4px;">寄送 Email</div>
+              <p class="input-hint">立刻寄出建立明細到公司信箱，避免遺漏。</p>
+            </div>
+            <span class="email-chip">@gmt.com.tw</span>
+          </div>
+
+          <label class="input-label" for="input-email-prefix" style="margin-top: 8px;">輸入帳號</label>
+          <div class="email-input-row">
+            <input
+              type="text"
+              id="input-email-prefix"
+              class="input-field"
+              placeholder="例如：username"
+              aria-label="公司信箱帳號"
+            >
+            <span class="email-suffix">@gmt.com.tw</span>
+          </div>
+
+          <div class="email-actions">
+            <button class="btn btn-primary" onclick="sendEmail()">📧 寄送 Email</button>
+            <button class="btn btn-secondary" onclick="printPage()" style="background: #17a2b8; color: white;">🖨️ 列印此頁</button>
           </div>
         </div>
-        
-        <button class="btn btn-primary" onclick="sendEmail()">📧 寄送 Email</button>
-        <button class="btn btn-secondary" onclick="printPage()" style="background: #17a2b8; color: white;">🖨️ 列印此頁</button>
+      </div>
+
+      <!-- 按鈕區（列印時隱藏） -->
+      <div class="card no-print">
         <button class="btn btn-secondary" onclick="showPage('menu')">完成</button>
       </div>
     </div>
@@ -905,6 +970,7 @@
           document.getElementById('created-partner').textContent = partner;
           document.getElementById('created-receiver').textContent = receiver;
           document.getElementById('created-qr-image').src = result.qrCodeUrl;
+          document.getElementById('input-email-prefix').value = '';
           
           // 顯示品項
           const itemsHtml = items.map(item => `
