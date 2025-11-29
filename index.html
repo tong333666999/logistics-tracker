@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.7</div>
+        <div class="card-title">📦 物流追蹤系統1.1.8</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -258,13 +258,47 @@
         
         <div class="input-group">
           <label class="input-label">品項明細</label>
+          <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px;">總包裹數量：</span>
+            <select id="input-total-packages" class="input-field" style="width: 80px;">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
           <div id="items-container">
             <div class="item-entry" data-index="0">
-              <div style="display: grid; grid-template-columns: 1fr 70px; gap: 6px;">
-                <input type="text" class="input-field item-model" placeholder="產品型號">
-                <input type="number" class="input-field item-quantity" placeholder="數量" min="1" value="1">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 70px; gap: 6px; margin-bottom: 6px;">
+                <select class="input-field item-category" onchange="updateModelOptions(this)">
+                  <option value="">類別</option>
+                  <option value="db">DB</option>
+                  <option value="lb">LB</option>
+                  <option value="hdp">Hard Docking Plate</option>
+                </select>
+                <select class="input-field item-model">
+                  <option value="">型號</option>
+                </select>
+                <select class="input-field item-quantity">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
               </div>
-              <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 6px;">
+              <input type="text" class="input-field item-accessory" placeholder="配件/備註（選填）">
             </div>
           </div>
           <button class="add-item-btn" onclick="addItem()">+ 新增品項</button>
@@ -400,7 +434,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbyv0XXwsnCRnEGuX-Z_rUc6T3exmmm7x4dSfLJnRjbrG-wLODIWNcObXwlb0GDb1e3c/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbwTxUzAxiqi-TpBh9YWOPcuhoFR1Ui51f7IYvJsEsmojzHztKOP5g7F6qCqmTZ8VMRW/exec'
     };
 
     const SETTINGS = {
@@ -414,6 +448,7 @@
     let selectedRole = null;
     let itemIndex = 1;
     let isDirectAccess = false; // 是否為直接掃碼進入
+    let FORM_OPTIONS = { db: [], lb: [], hdp: [] }; // 表單選項
 
     // ============ LIFF 初始化 ============
     async function initializeLiff() {
@@ -612,7 +647,13 @@
           alert('辨識失敗：' + result.error);
         } else {
           // 填入表單
-          if (result.partner) document.getElementById('input-partner').value = result.partner;
+          if (result.partner) {
+            const select = document.getElementById('input-partner');
+            // 檢查選項是否存在
+            const exists = Array.from(select.options).some(o => o.value === result.partner);
+            if (exists) select.value = result.partner;
+          }
+          
           if (result.receiver) document.getElementById('input-receiver').value = result.receiver;
           
           if (result.items && result.items.length > 0) {
@@ -622,9 +663,33 @@
               addItem(); // 新增一列
               const entries = document.querySelectorAll('.item-entry');
               const lastEntry = entries[entries.length - 1];
-              lastEntry.querySelector('.item-model').value = item.model || '';
+              
+              // 嘗試匹配型號
+              let category = '';
+              let model = item.model || '';
+              
+              // 簡單匹配邏輯
+              if (FORM_OPTIONS.db.includes(model)) category = 'db';
+              else if (FORM_OPTIONS.lb.includes(model)) category = 'lb';
+              else if (FORM_OPTIONS.hdp.includes(model)) category = 'hdp';
+              
+              if (category) {
+                const catSelect = lastEntry.querySelector('.item-category');
+                catSelect.value = category;
+                updateModelOptions(catSelect); // 更新型號選單
+                lastEntry.querySelector('.item-model').value = model;
+              } else {
+                // 如果找不到型號，將辨識到的型號放入備註
+                if (model) {
+                  const accInput = lastEntry.querySelector('.item-accessory');
+                  accInput.value = `(辨識型號: ${model}) ` + accInput.value;
+                }
+              }
+              
               lastEntry.querySelector('.item-quantity').value = item.quantity || 1;
-              lastEntry.querySelector('.item-accessory').value = item.accessory || '';
+              if (item.accessory) {
+                lastEntry.querySelector('.item-accessory').value += item.accessory;
+              }
             });
           }
           alert('✅ 辨識完成！請確認資料是否正確。');
@@ -671,24 +736,33 @@
     }
 
     async function createPackage() {
-      const partner = document.getElementById('input-partner').value.trim();
+      const partner = document.getElementById('input-partner').value;
       const receiver = document.getElementById('input-receiver').value.trim();
+      const totalPackages = document.getElementById('input-total-packages').value;
       
-      if (!partner || !receiver) {
-        alert('請填寫廠家和收件者');
+      if (!partner) {
+        alert('請選擇廠家');
+        return;
+      }
+      if (!receiver) {
+        alert('請填寫收件者');
         return;
       }
       
       const items = [];
       document.querySelectorAll('.item-entry').forEach(entry => {
-        const model = entry.querySelector('.item-model').value.trim();
-        const quantity = parseInt(entry.querySelector('.item-quantity').value) || 1;
+        const category = entry.querySelector('.item-category').value;
+        const model = entry.querySelector('.item-model').value;
+        const quantity = entry.querySelector('.item-quantity').value;
         const accessory = entry.querySelector('.item-accessory').value.trim();
-        if (model) items.push({ model, quantity, accessory });
+        
+        if (category && model) {
+          items.push({ model, quantity, accessory });
+        }
       });
       
       if (items.length === 0) {
-        alert('請至少填寫一個品項');
+        alert('請至少填寫一個完整品項（需選擇類別與型號）');
         return;
       }
       
@@ -696,7 +770,7 @@
       
       try {
         const result = await apiPost('createPackage', {
-          partner, receiver, items,
+          partner, receiver, items, totalPackages,
           lineUserId: currentUser.lineUserId,
           lineName: currentUser.name
         });
@@ -1095,26 +1169,71 @@
     // ============ 啟動 ============
     document.addEventListener('DOMContentLoaded', () => {
       initializeLiff();
-      loadPartners();
+      loadFormOptions();
     });
     
-    async function loadPartners() {
+    async function loadFormOptions() {
       try {
-        const partners = await apiGet('getPartners');
+        const options = await apiGet('getFormOptions');
+        FORM_OPTIONS = options;
+        
+        // 填入廠家
         const select = document.getElementById('input-partner');
         select.innerHTML = '<option value="">請選擇廠家</option>';
-        
-        partners.forEach(p => {
+        options.partners.forEach(p => {
           const option = document.createElement('option');
           option.value = p;
           option.textContent = p;
           select.appendChild(option);
         });
+        
       } catch (e) {
-        console.error('載入廠家失敗', e);
+        console.error('載入選項失敗', e);
         document.getElementById('input-partner').innerHTML = '<option value="">載入失敗</option>';
       }
     }
-  </script>
+    
+    function updateModelOptions(categorySelect) {
+      const category = categorySelect.value;
+      const modelSelect = categorySelect.parentElement.querySelector('.item-model');
+      modelSelect.innerHTML = '<option value="">型號</option>';
+      
+      if (category && FORM_OPTIONS[category]) {
+        FORM_OPTIONS[category].forEach(m => {
+          const option = document.createElement('option');
+          option.value = m;
+          option.textContent = m;
+          modelSelect.appendChild(option);
+        });
+      }
+    }
+    
+    function addItem() {
+      itemIndex++;
+      const div = document.createElement('div');
+      div.className = 'item-entry';
+      div.dataset.index = itemIndex;
+      div.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr 70px; gap: 6px; margin-bottom: 6px;">
+          <select class="input-field item-category" onchange="updateModelOptions(this)">
+            <option value="">類別</option>
+            <option value="db">DB</option>
+            <option value="lb">LB</option>
+            <option value="hdp">Hard Docking Plate</option>
+          </select>
+          <select class="input-field item-model">
+            <option value="">型號</option>
+          </select>
+          <select class="input-field item-quantity">
+            ${[1,2,3,4,5,6,7,8,9,10].map(i => `<option value="${i}">${i}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" class="input-field item-accessory" placeholder="配件/備註（選填）" style="flex:1;">
+          <button class="btn btn-secondary" onclick="this.closest('.item-entry').remove()" style="width:auto; padding:0 10px; background:#dc3545; color:white;">🗑️</button>
+        </div>
+      `;
+      document.getElementById('items-container').appendChild(div);
+    }
 </body>
 </html>
