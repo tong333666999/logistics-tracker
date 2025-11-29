@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.9</div>
+        <div class="card-title">📦 物流追蹤系統1.1.10</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -452,47 +452,59 @@
 
     // ============ LIFF 初始化 ============
     async function initializeLiff() {
+      console.log('開始 LIFF 初始化...');
       try {
+        console.log('呼叫 liff.init...');
         await liff.init({ liffId: CONFIG.LIFF_ID });
+        console.log('liff.init 完成');
         
         // 檢查 URL 參數
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('orderId');
+        console.log('URL orderId:', orderId);
         
         if (orderId) {
           isDirectAccess = true;
         }
         
         if (liff.isLoggedIn()) {
+          console.log('LIFF 已登入');
           try {
             const profile = await liff.getProfile();
+            console.log('取得 Profile:', profile);
             currentUser.lineUserId = profile.userId;
             currentUser.name = profile.displayName;
           } catch (e) {
-            console.log('無法取得 LINE 資訊');
+            console.error('無法取得 LINE 資訊', e);
             currentUser.lineUserId = 'anonymous_' + Date.now();
             currentUser.name = '訪客';
           }
         } else {
+          console.log('LIFF 未登入');
           // 如果有單號 (掃碼進入)，允許訪客模式，不強制登入
           if (orderId) {
+            console.log('有單號，使用訪客模式');
             currentUser.lineUserId = 'guest_' + Date.now();
             currentUser.name = '訪客';
           } else {
             // 沒有單號 (進入主選單)，強制登入
+            console.log('無單號，強制登入');
             liff.login();
             return;
           }
         }
         
         if (orderId) {
+          console.log('載入包裹:', orderId);
           await loadPackageForSign(orderId);
         } else {
+          console.log('顯示主選單');
           showPage('menu');
         }
         
       } catch (error) {
         console.error('LIFF 初始化失敗:', error);
+        alert('LIFF 初始化失敗: ' + error.message);
         currentUser.lineUserId = 'test_' + Date.now();
         currentUser.name = '測試用戶';
         showPage('menu');
@@ -1168,6 +1180,24 @@
 
     // ============ 啟動 ============
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOMContentLoaded triggered');
+      
+      // 全域錯誤處理
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error('Global Error:', message, error);
+        alert('發生未預期的錯誤: ' + message);
+      };
+      
+      // 強制超時保護：如果 15 秒後還在 loading，強制顯示選單
+      setTimeout(() => {
+        const loadingPage = document.getElementById('page-loading');
+        if (loadingPage.classList.contains('active')) {
+          console.warn('Initialization timed out, forcing menu display');
+          alert('系統初始化逾時，將強制進入主選單。部分功能可能無法使用。');
+          showPage('menu');
+        }
+      }, 15000);
+
       initializeLiff();
       loadFormOptions();
     });
