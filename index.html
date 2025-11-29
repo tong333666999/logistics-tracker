@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.11</div>
+        <div class="card-title">📦 物流追蹤系統1.1.12</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -1194,8 +1194,26 @@
             })
             [functionName](params);
         } else {
-          console.error(`[API] Error: google.script.run not found. Function: ${functionName}`);
-          reject(new Error('Google Script Environment not found'));
+          // Fallback to fetch for external hosting (e.g. GitHub Pages)
+          console.log(`[API] Fetching ${functionName} via HTTP`);
+          const url = new URL(CONFIG.GAS_URL);
+          url.searchParams.append('action', functionName);
+          Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+          
+          fetch(url)
+            .then(res => {
+              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+              return res.json();
+            })
+            .then(response => {
+              console.log(`[API] Success ${functionName}`, response);
+              if (response.error) throw new Error(response.error);
+              resolve(response);
+            })
+            .catch(error => {
+              console.error(`[API] Failure ${functionName}`, error);
+              reject(error);
+            });
         }
       });
     }
@@ -1215,8 +1233,28 @@
             })
             [functionName](params);
         } else {
-          console.error(`[API] Error: google.script.run not found. Function: ${functionName}`);
-          reject(new Error('Google Script Environment not found'));
+          // Fallback to fetch for external hosting
+          console.log(`[API] Posting ${functionName} via HTTP`);
+          const payload = { ...params, action: functionName };
+          
+          fetch(CONFIG.GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+            // Note: Not setting Content-Type to avoid CORS preflight
+          })
+            .then(res => {
+              if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+              return res.json();
+            })
+            .then(response => {
+              console.log(`[API] Success ${functionName}`, response);
+              if (response.error) throw new Error(response.error);
+              resolve(response);
+            })
+            .catch(error => {
+              console.error(`[API] Failure ${functionName}`, error);
+              reject(error);
+            });
         }
       });
     }
