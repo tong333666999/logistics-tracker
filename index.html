@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.8</div>
+        <div class="card-title">📦 物流追蹤系統1.1.9</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -434,7 +434,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbwTxUzAxiqi-TpBh9YWOPcuhoFR1Ui51f7IYvJsEsmojzHztKOP5g7F6qCqmTZ8VMRW/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbz5iZmegEZbThgVYsOoWymER9jxbVLivwV4fql7CjjSlEygTWREGN60Jx6Ath77StRE/exec'
     };
 
     const SETTINGS = {
@@ -1173,8 +1173,23 @@
     });
     
     async function loadFormOptions() {
+      console.log('開始載入表單選項...');
       try {
-        const options = await apiGet('getFormOptions');
+        // 設定 10 秒超時
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('載入逾時')), 10000)
+        );
+        
+        const options = await Promise.race([
+          apiGet('getFormOptions'),
+          timeoutPromise
+        ]);
+        
+        if (options.error) {
+          throw new Error(options.error);
+        }
+        
+        console.log('選項載入成功', options);
         FORM_OPTIONS = options;
         
         // 填入廠家
@@ -1189,7 +1204,8 @@
         
       } catch (e) {
         console.error('載入選項失敗', e);
-        document.getElementById('input-partner').innerHTML = '<option value="">載入失敗</option>';
+        document.getElementById('input-partner').innerHTML = '<option value="">載入失敗: ' + e.message + '</option>';
+        alert('載入表單選項失敗，請檢查網路或稍後再試。\n錯誤: ' + e.message);
       }
     }
     
