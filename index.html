@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.10</div>
+        <div class="card-title">📦 物流追蹤系統1.1.11</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -1194,22 +1194,8 @@
             })
             [functionName](params);
         } else {
-          console.warn(`[API] Local Mode: ${functionName}`);
-          // 模擬本地數據
-          if (functionName === 'getFormOptions') {
-            setTimeout(() => resolve({
-              partners: ['測試廠家A', '測試廠家B'],
-              db: ['G2514', 'G2513'],
-              lb: ['E3', 'E1_S'],
-              hdp: ['CTA8290D']
-            }), 500);
-          } else if (functionName === 'getPending') {
-             setTimeout(() => resolve([]), 500);
-          } else if (functionName === 'getHistory') {
-             setTimeout(() => resolve([]), 500);
-          } else {
-            reject(new Error('Local mode: google.script.run not available'));
-          }
+          console.error(`[API] Error: google.script.run not found. Function: ${functionName}`);
+          reject(new Error('Google Script Environment not found'));
         }
       });
     }
@@ -1229,8 +1215,8 @@
             })
             [functionName](params);
         } else {
-          console.warn(`[API] Local Mode: ${functionName}`);
-          setTimeout(() => resolve({ success: true, orderId: 'TEST-123' }), 1000);
+          console.error(`[API] Error: google.script.run not found. Function: ${functionName}`);
+          reject(new Error('Google Script Environment not found'));
         }
       });
     }
