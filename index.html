@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.12</div>
+        <div class="card-title">📦 物流追蹤系統1.1.13</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -336,21 +336,20 @@
           <p>請將此 QR Code 貼在包裹上</p>
           <img id="created-qr-image" class="qr-image" src="" alt="QR Code">
         </div>
-      </div>
-      
-      <!-- 按鈕區（列印時隱藏） -->
-      <div class="card no-print">
-        <div class="input-group">
-          <label class="input-label">寄送 Email</label>
-          <div style="display: flex; gap: 6px;">
-            <input type="text" id="input-email-prefix" class="input-field" placeholder="帳號" style="flex: 1;">
-            <span style="line-height: 44px; font-size: 14px;">@gmt.com.tw</span>
+
+        <div class="no-print" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+          <div class="input-group">
+            <label class="input-label">寄送 Email</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="input-email-prefix" class="input-field" placeholder="帳號" style="flex: 1;">
+              <span style="line-height: 44px; font-size: 14px;">@gmt.com.tw</span>
+            </div>
           </div>
+          
+          <button class="btn btn-primary" onclick="sendEmail()">📧 寄送 Email</button>
+          <button class="btn btn-secondary" onclick="printPage()" style="background: #17a2b8; color: white;">🖨️ 列印此頁</button>
+          <button class="btn btn-secondary" onclick="showPage('menu')">完成</button>
         </div>
-        
-        <button class="btn btn-primary" onclick="sendEmail()">📧 寄送 Email</button>
-        <button class="btn btn-secondary" onclick="printPage()" style="background: #17a2b8; color: white;">🖨️ 列印此頁</button>
-        <button class="btn btn-secondary" onclick="showPage('menu')">完成</button>
       </div>
     </div>
     
@@ -434,7 +433,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbz5iZmegEZbThgVYsOoWymER9jxbVLivwV4fql7CjjSlEygTWREGN60Jx6Ath77StRE/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbwopkpBlYPkS41DmFP5jfENOuzYywe1cBTudMHrtv16VN45GdZ32OtEDy5v8Dl_VNOC/exec'
     };
 
     const SETTINGS = {
@@ -597,31 +596,6 @@
     }
 
     // ============ 建立包裹 ============
-    function addItem() {
-      const container = document.getElementById('items-container');
-      const newItem = document.createElement('div');
-      newItem.className = 'item-entry';
-      newItem.dataset.index = itemIndex;
-      newItem.innerHTML = `
-        <div class="item-entry-header">
-          <span>品項 ${itemIndex + 1}</span>
-          <button class="remove-item" onclick="removeItem(${itemIndex})">×</button>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 70px; gap: 6px;">
-          <input type="text" class="input-field item-model" placeholder="產品型號">
-          <input type="number" class="input-field item-quantity" placeholder="數量" min="1" value="1">
-        </div>
-        <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 6px;">
-      `;
-      container.appendChild(newItem);
-      itemIndex++;
-    }
-
-    function removeItem(index) {
-      const item = document.querySelector(`.item-entry[data-index="${index}"]`);
-      if (item) item.remove();
-    }
-
     // ============ 圖片處理 ============
     // 專門用於傳送大量資料 (如圖片) 的 POST 函式
     async function postToGAS(action, data) {
@@ -693,14 +667,14 @@
               } else {
                 // 如果找不到型號，將辨識到的型號放入備註
                 if (model) {
-                  const accInput = lastEntry.querySelector('.item-accessory');
-                  accInput.value = `(辨識型號: ${model}) ` + accInput.value;
+                  const noteInput = lastEntry.querySelector('.item-note');
+                  noteInput.value = `(辨識型號: ${model}) ` + noteInput.value;
                 }
               }
               
               lastEntry.querySelector('.item-quantity').value = item.quantity || 1;
               if (item.accessory) {
-                lastEntry.querySelector('.item-accessory').value += item.accessory;
+                lastEntry.querySelector('.item-note').value += item.accessory;
               }
             });
           }
@@ -766,10 +740,10 @@
         const category = entry.querySelector('.item-category').value;
         const model = entry.querySelector('.item-model').value;
         const quantity = entry.querySelector('.item-quantity').value;
-        const accessory = entry.querySelector('.item-accessory').value.trim();
+        const note = entry.querySelector('.item-note') ? entry.querySelector('.item-note').value.trim() : '';
         
         if (category && model) {
-          items.push({ model, quantity, accessory });
+          items.push({ category, model, quantity, note });
         }
       });
       
@@ -796,7 +770,7 @@
           
           const itemsHtml = items.map(item => `
             <div class="item-row">
-              <span>${item.model}${item.accessory ? ' (' + item.accessory + ')' : ''}</span>
+              <span>${item.category} - ${item.model}${item.note ? ' (' + item.note + ')' : ''}</span>
               <span>× ${item.quantity}</span>
             </div>
           `).join('');
@@ -808,13 +782,33 @@
           // 清空表單
           document.getElementById('input-partner').value = '';
           document.getElementById('input-receiver').value = '';
+          document.getElementById('input-total-packages').value = '1';
           document.getElementById('items-container').innerHTML = `
             <div class="item-entry" data-index="0">
-              <div style="display: grid; grid-template-columns: 1fr 70px; gap: 6px;">
-                <input type="text" class="input-field item-model" placeholder="產品型號">
-                <input type="number" class="input-field item-quantity" placeholder="數量" min="1" value="1">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 70px; gap: 6px; margin-bottom: 6px;">
+                <select class="input-field item-category" onchange="updateModelOptions(this)">
+                  <option value="">類別</option>
+                  <option value="db">DB</option>
+                  <option value="lb">LB</option>
+                  <option value="hdp">Hard Docking Plate</option>
+                </select>
+                <select class="input-field item-model">
+                  <option value="">型號</option>
+                </select>
+                <select class="input-field item-quantity">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
               </div>
-              <input type="text" class="input-field item-accessory" placeholder="配件（選填）" style="margin-top: 6px;">
+              <input type="text" class="input-field item-note" placeholder="備註" style="margin-top: 6px;">
             </div>
           `;
           itemIndex = 1;
@@ -997,7 +991,7 @@
       
       const itemsHtml = currentPackage.items.map(item => `
         <div class="item-row">
-          <span>${item.model}${item.accessory ? ' (' + item.accessory + ')' : ''}</span>
+          <span>${item.category ? item.category + ' - ' : ''}${item.model}${item.note ? ' (' + item.note + ')' : ''}</span>
           <span>× ${item.quantity}</span>
         </div>
       `).join('');
@@ -1356,7 +1350,7 @@
           </select>
         </div>
         <div style="display: flex; gap: 6px;">
-          <input type="text" class="input-field item-accessory" placeholder="配件/備註（選填）" style="flex:1;">
+          <input type="text" class="input-field item-note" placeholder="備註" style="flex:1;">
           <button class="btn btn-secondary" onclick="this.closest('.item-entry').remove()" style="width:auto; padding:0 10px; background:#dc3545; color:white;">🗑️</button>
         </div>
       `;
