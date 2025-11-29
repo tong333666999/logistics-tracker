@@ -212,7 +212,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.6</div>
+        <div class="card-title">📦 物流追蹤系統1.1.7</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -246,7 +246,9 @@
             <button class="btn btn-secondary" onclick="document.getElementById('upload-image').click()" style="margin: 0; background: #e9ecef;">📷 拍照辨識</button>
             <input type="file" id="upload-image" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
           </div>
-          <input type="text" id="input-partner" class="input-field" placeholder="例如：超豐">
+          <select id="input-partner" class="input-field">
+            <option value="">載入中...</option>
+          </select>
         </div>
         
         <div class="input-group">
@@ -398,7 +400,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbzWQdjfPoYf8faxystVCGp6ncCrx-rSCbzTLM-l1dX8wQRpfqRmC-Lgdq_m3cKZCbeK/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbyv0XXwsnCRnEGuX-Z_rUc6T3exmmm7x4dSfLJnRjbrG-wLODIWNcObXwlb0GDb1e3c/exec'
     };
 
     const SETTINGS = {
@@ -1091,7 +1093,28 @@
     }
 
     // ============ 啟動 ============
-    document.addEventListener('DOMContentLoaded', initializeLiff);
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeLiff();
+      loadPartners();
+    });
+    
+    async function loadPartners() {
+      try {
+        const partners = await apiGet('getPartners');
+        const select = document.getElementById('input-partner');
+        select.innerHTML = '<option value="">請選擇廠家</option>';
+        
+        partners.forEach(p => {
+          const option = document.createElement('option');
+          option.value = p;
+          option.textContent = p;
+          select.appendChild(option);
+        });
+      } catch (e) {
+        console.error('載入廠家失敗', e);
+        document.getElementById('input-partner').innerHTML = '<option value="">載入失敗</option>';
+      }
+    }
   </script>
 </body>
 </html>
