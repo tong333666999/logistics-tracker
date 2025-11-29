@@ -180,6 +180,10 @@
     .menu-btn-icon { font-size: 28px; margin-bottom: 6px; }
     .menu-btn-text { font-size: 13px; font-weight: 600; }
     
+    .error-border { border-color: #dc3545 !important; }
+    .error-text { color: #dc3545 !important; }
+    .inventory-info { font-size: 12px; color: #28a745; margin-left: 4px; font-weight: bold; }
+    
     /* 列印樣式 */
     @media print {
       @page { size: A4; margin: 10mm; }
@@ -212,7 +216,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.13</div>
+        <div class="card-title">📦 物流追蹤系統1.1.14</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -246,7 +250,7 @@
             <button class="btn btn-secondary" onclick="document.getElementById('upload-image').click()" style="margin: 0; background: #e9ecef;">📷 拍照辨識</button>
             <input type="file" id="upload-image" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
           </div>
-          <select id="input-partner" class="input-field">
+          <select id="input-partner" class="input-field" onchange="updateAllInventoryDisplays()">
             <option value="">載入中...</option>
           </select>
         </div>
@@ -433,7 +437,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbwopkpBlYPkS41DmFP5jfENOuzYywe1cBTudMHrtv16VN45GdZ32OtEDy5v8Dl_VNOC/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbws5V3UxoJN7xMN66bF4JIuGnqIvouMREmaTdsNzGYcbiwJbLHcLZgPqK-b6o1iqft6/exec'
     };
 
     const SETTINGS = {
@@ -447,7 +451,7 @@
     let selectedRole = null;
     let itemIndex = 1;
     let isDirectAccess = false; // 是否為直接掃碼進入
-    let FORM_OPTIONS = { db: [], lb: [], hdp: [] }; // 表單選項
+    let FORM_OPTIONS = { db: [], lb: [], hdp: [], inventory: {} }; // 表單選項
 
     // ============ LIFF 初始化 ============
     async function initializeLiff() {
@@ -722,30 +726,61 @@
     }
 
     async function createPackage() {
-      const partner = document.getElementById('input-partner').value;
-      const receiver = document.getElementById('input-receiver').value.trim();
+      const partnerSelect = document.getElementById('input-partner');
+      const partner = partnerSelect.value;
+      const receiverInput = document.getElementById('input-receiver');
+      const receiver = receiverInput.value.trim();
       const totalPackages = document.getElementById('input-total-packages').value;
       
+      let isValid = true;
+
       if (!partner) {
-        alert('請選擇廠家');
-        return;
+        partnerSelect.classList.add('error-border');
+        isValid = false;
+      } else {
+        partnerSelect.classList.remove('error-border');
       }
+
       if (!receiver) {
-        alert('請填寫收件者');
-        return;
+        receiverInput.classList.add('error-border');
+        isValid = false;
+      } else {
+        receiverInput.classList.remove('error-border');
       }
       
       const items = [];
       document.querySelectorAll('.item-entry').forEach(entry => {
-        const category = entry.querySelector('.item-category').value;
-        const model = entry.querySelector('.item-model').value;
+        const categorySelect = entry.querySelector('.item-category');
+        const modelSelect = entry.querySelector('.item-model');
         const quantity = entry.querySelector('.item-quantity').value;
         const note = entry.querySelector('.item-note') ? entry.querySelector('.item-note').value.trim() : '';
+        
+        const category = categorySelect.value;
+        const model = modelSelect.value;
+
+        if (!category) {
+           categorySelect.classList.add('error-border');
+           isValid = false;
+        } else {
+           categorySelect.classList.remove('error-border');
+        }
+
+        if (!model) {
+           modelSelect.classList.add('error-border');
+           isValid = false;
+        } else {
+           modelSelect.classList.remove('error-border');
+        }
         
         if (category && model) {
           items.push({ category, model, quantity, note });
         }
       });
+      
+      if (!isValid) {
+        alert('請檢查紅色標示的欄位，必須選擇或填寫');
+        return;
+      }
       
       if (items.length === 0) {
         alert('請至少填寫一個完整品項（需選擇類別與型號）');
@@ -781,7 +816,9 @@
           
           // 清空表單
           document.getElementById('input-partner').value = '';
+          document.getElementById('input-partner').classList.remove('error-border');
           document.getElementById('input-receiver').value = '';
+          document.getElementById('input-receiver').classList.remove('error-border');
           document.getElementById('input-total-packages').value = '1';
           document.getElementById('items-container').innerHTML = `
             <div class="item-entry" data-index="0">
@@ -792,7 +829,7 @@
                   <option value="lb">LB</option>
                   <option value="hdp">Hard Docking Plate</option>
                 </select>
-                <select class="input-field item-model">
+                <select class="input-field item-model" onchange="updateInventoryDisplay(this)">
                   <option value="">型號</option>
                 </select>
                 <select class="input-field item-quantity">
@@ -808,7 +845,10 @@
                   <option value="10">10</option>
                 </select>
               </div>
-              <input type="text" class="input-field item-note" placeholder="備註" style="margin-top: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <input type="text" class="input-field item-note" placeholder="備註" style="margin-top: 6px; flex: 1;">
+                <span class="inventory-info"></span>
+              </div>
             </div>
           `;
           itemIndex = 1;
@@ -1327,6 +1367,33 @@
           modelSelect.appendChild(option);
         });
       }
+      updateInventoryDisplay(modelSelect);
+    }
+
+    function updateInventoryDisplay(element) {
+      const entry = element.closest('.item-entry');
+      const category = entry.querySelector('.item-category').value;
+      const model = entry.querySelector('.item-model').value;
+      const partner = document.getElementById('input-partner').value;
+      const infoSpan = entry.querySelector('.inventory-info');
+      
+      if (category && model && partner && FORM_OPTIONS.inventory && FORM_OPTIONS.inventory[category]) {
+        const modelData = FORM_OPTIONS.inventory[category][model];
+        if (modelData && modelData[partner] !== undefined) {
+          infoSpan.textContent = `庫存: ${modelData[partner]}`;
+        } else {
+          infoSpan.textContent = '庫存: -';
+        }
+      } else {
+        infoSpan.textContent = '';
+      }
+    }
+
+    function updateAllInventoryDisplays() {
+      document.querySelectorAll('.item-entry').forEach(entry => {
+        const modelSelect = entry.querySelector('.item-model');
+        updateInventoryDisplay(modelSelect);
+      });
     }
     
     function addItem() {
@@ -1342,15 +1409,16 @@
             <option value="lb">LB</option>
             <option value="hdp">Hard Docking Plate</option>
           </select>
-          <select class="input-field item-model">
+          <select class="input-field item-model" onchange="updateInventoryDisplay(this)">
             <option value="">型號</option>
           </select>
           <select class="input-field item-quantity">
             ${[1,2,3,4,5,6,7,8,9,10].map(i => `<option value="${i}">${i}</option>`).join('')}
           </select>
         </div>
-        <div style="display: flex; gap: 6px;">
+        <div style="display: flex; gap: 6px; align-items: center;">
           <input type="text" class="input-field item-note" placeholder="備註" style="flex:1;">
+          <span class="inventory-info"></span>
           <button class="btn btn-secondary" onclick="this.closest('.item-entry').remove()" style="width:auto; padding:0 10px; background:#dc3545; color:white;">🗑️</button>
         </div>
       `;
