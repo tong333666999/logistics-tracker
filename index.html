@@ -180,7 +180,7 @@
     .menu-btn-icon { font-size: 28px; margin-bottom: 6px; }
     .menu-btn-text { font-size: 13px; font-weight: 600; }
     
-    .error-border { border-color: #dc3545 !important; }
+    .error-border { border-color: #dc3545 !important; background-color: #fff8f8; color: #dc3545; }
     .error-text { color: #dc3545 !important; }
     .inventory-info { font-size: 12px; color: #28a745; margin-left: 4px; font-weight: bold; }
     
@@ -216,7 +216,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.14</div>
+        <div class="card-title">📦 物流追蹤系統1.1.15</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -437,7 +437,7 @@
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbws5V3UxoJN7xMN66bF4JIuGnqIvouMREmaTdsNzGYcbiwJbLHcLZgPqK-b6o1iqft6/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbzKqViPmHPpIUjL3Uh8pIBzKzn09isIaD3Q37JrleeotvuKlGxBWf4DT86OWZywzHBO/exec'
     };
 
     const SETTINGS = {
@@ -1376,7 +1376,9 @@
       const model = entry.querySelector('.item-model').value;
       const partner = document.getElementById('input-partner').value;
       const infoSpan = entry.querySelector('.inventory-info');
-      
+
+      if (!infoSpan) return;
+
       if (category && model && partner && FORM_OPTIONS.inventory && FORM_OPTIONS.inventory[category]) {
         const modelData = FORM_OPTIONS.inventory[category][model];
         if (modelData && modelData[partner] !== undefined) {
