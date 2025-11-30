@@ -182,7 +182,9 @@
     
     .error-border { border-color: #dc3545 !important; background-color: #fff8f8; color: #dc3545; }
     .error-text { color: #dc3545 !important; }
-    .inventory-info { font-size: 12px; color: #28a745; margin-left: 4px; font-weight: bold; }
+    .inventory-info { font-size: 12px; color: #28a745; margin-left: 4px; font-weight: bold; white-space: nowrap; }
+    .item-note { width: 60% !important; }
+    .item-model { text-transform: uppercase; }
     
     /* 列印樣式 */
     @media print {
@@ -216,7 +218,7 @@
     <!-- 主選單 -->
     <div id="page-menu" class="page">
       <div class="card">
-        <div class="card-title">📦 物流追蹤系統1.1.15</div>
+        <div class="card-title">📦 物流追蹤系統1.1.16</div>
         <p id="welcome-message">歡迎使用！</p>
         <div class="menu-buttons">
           <button class="menu-btn" onclick="showPage('create')">
@@ -286,9 +288,8 @@
                   <option value="lb">LB</option>
                   <option value="hdp">Hard Docking Plate</option>
                 </select>
-                <select class="input-field item-model">
-                  <option value="">型號</option>
-                </select>
+                <input type="text" class="input-field item-model" placeholder="請先選擇類別" disabled 
+                       oninput="this.value = this.value.toUpperCase(); updateInventoryDisplay(this)">
                 <select class="input-field item-quantity">
                   <option value="1">1</option>
                   <option value="2">2</option>
@@ -300,9 +301,22 @@
                   <option value="8">8</option>
                   <option value="9">9</option>
                   <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+                  <option value="16">16</option>
+                  <option value="17">17</option>
+                  <option value="18">18</option>
+                  <option value="19">19</option>
+                  <option value="20">20</option>
                 </select>
               </div>
-              <input type="text" class="input-field item-accessory" placeholder="配件/備註（選填）">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <input type="text" class="input-field item-note" placeholder="備註" style="margin-top: 6px; flex: 1;">
+                <span class="inventory-info"></span>
+              </div>
             </div>
           </div>
           <button class="add-item-btn" onclick="addItem()">+ 新增品項</button>
@@ -431,13 +445,18 @@
       </div>
     </div>
     
+    <!-- Datalists for Model Suggestions -->
+    <datalist id="list-db"></datalist>
+    <datalist id="list-lb"></datalist>
+    <datalist id="list-hdp"></datalist>
+
   </div>
 
   <script>
     // ============ 設定 ============
     const CONFIG = {
       LIFF_ID: '2008586810-kB2lZW95',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbzKqViPmHPpIUjL3Uh8pIBzKzn09isIaD3Q37JrleeotvuKlGxBWf4DT86OWZywzHBO/exec'
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbx_xmwY1KflmnaWY_AuSLiRc74eYPhrl9hXJdw8sAjSrkIx__0e-UxAkF-CkDNe_qX6/exec'
     };
 
     const SETTINGS = {
@@ -805,7 +824,7 @@
           
           const itemsHtml = items.map(item => `
             <div class="item-row">
-              <span>${item.category} - ${item.model}${item.note ? ' (' + item.note + ')' : ''}</span>
+              <span>${item.model} - ${item.category.toUpperCase()}${item.note ? ' (' + item.note + ')' : ''}</span>
               <span>× ${item.quantity}</span>
             </div>
           `).join('');
@@ -820,6 +839,12 @@
           document.getElementById('input-receiver').value = '';
           document.getElementById('input-receiver').classList.remove('error-border');
           document.getElementById('input-total-packages').value = '1';
+          // Generate quantity options 1-20
+          let qtyOptions = '';
+          for (let i = 1; i <= 20; i++) {
+            qtyOptions += `<option value="${i}">${i}</option>`;
+          }
+
           document.getElementById('items-container').innerHTML = `
             <div class="item-entry" data-index="0">
               <div style="display: grid; grid-template-columns: 1fr 1fr 70px; gap: 6px; margin-bottom: 6px;">
@@ -829,20 +854,10 @@
                   <option value="lb">LB</option>
                   <option value="hdp">Hard Docking Plate</option>
                 </select>
-                <select class="input-field item-model" onchange="updateInventoryDisplay(this)">
-                  <option value="">型號</option>
-                </select>
+                <input type="text" class="input-field item-model" placeholder="請先選擇類別" disabled 
+                       oninput="this.value = this.value.toUpperCase(); updateInventoryDisplay(this)">
                 <select class="input-field item-quantity">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
+                  ${qtyOptions}
                 </select>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1031,7 +1046,7 @@
       
       const itemsHtml = currentPackage.items.map(item => `
         <div class="item-row">
-          <span>${item.category ? item.category + ' - ' : ''}${item.model}${item.note ? ' (' + item.note + ')' : ''}</span>
+          <span>${item.model}${item.category ? ' - ' + item.category : ''}${item.note ? ' (' + item.note + ')' : ''}</span>
           <span>× ${item.quantity}</span>
         </div>
       `).join('');
@@ -1346,6 +1361,23 @@
           option.textContent = p;
           select.appendChild(option);
         });
+
+        // Populate Datalists
+        const populateDatalist = (id, items) => {
+          const datalist = document.getElementById(id);
+          datalist.innerHTML = '';
+          if (items) {
+            items.forEach(item => {
+              const option = document.createElement('option');
+              option.value = item;
+              datalist.appendChild(option);
+            });
+          }
+        };
+
+        populateDatalist('list-db', options.db);
+        populateDatalist('list-lb', options.lb);
+        populateDatalist('list-hdp', options.hdp);
         
       } catch (e) {
         console.error('載入選項失敗', e);
@@ -1356,35 +1388,48 @@
     
     function updateModelOptions(categorySelect) {
       const category = categorySelect.value;
-      const modelSelect = categorySelect.parentElement.querySelector('.item-model');
-      modelSelect.innerHTML = '<option value="">型號</option>';
+      const modelInput = categorySelect.parentElement.querySelector('.item-model');
       
-      if (category && FORM_OPTIONS[category]) {
-        FORM_OPTIONS[category].forEach(m => {
-          const option = document.createElement('option');
-          option.value = m;
-          option.textContent = m;
-          modelSelect.appendChild(option);
-        });
+      // Set the list attribute to the corresponding datalist ID
+      if (category) {
+        modelInput.setAttribute('list', 'list-' + category);
+        modelInput.placeholder = "輸入或選擇型號";
+        modelInput.disabled = false;
+      } else {
+        modelInput.removeAttribute('list');
+        modelInput.placeholder = "請先選擇類別";
+        modelInput.disabled = true;
       }
-      updateInventoryDisplay(modelSelect);
+      
+      // Clear value if category changes? Maybe better to keep it if user wants to switch category but keep model name
+      // But usually model names are specific to category. Let's clear it to avoid confusion.
+      modelInput.value = '';
+      updateInventoryDisplay(modelInput);
     }
 
     function updateInventoryDisplay(element) {
       const entry = element.closest('.item-entry');
       const category = entry.querySelector('.item-category').value;
-      const model = entry.querySelector('.item-model').value;
+      const model = entry.querySelector('.item-model').value.toUpperCase(); // Ensure uppercase
       const partner = document.getElementById('input-partner').value;
       const infoSpan = entry.querySelector('.inventory-info');
 
       if (!infoSpan) return;
 
       if (category && model && partner && FORM_OPTIONS.inventory && FORM_OPTIONS.inventory[category]) {
-        const modelData = FORM_OPTIONS.inventory[category][model];
+        // Try to find exact match first
+        let modelData = FORM_OPTIONS.inventory[category][model];
+        
+        // If not found, try to find a key that starts with the input (simple auto-complete logic for display?)
+        // Actually, for inventory lookup, we should probably only show if exact match or close match.
+        // Since the user can type anything, let's just check exact match for now.
+        
         if (modelData && modelData[partner] !== undefined) {
           infoSpan.textContent = `庫存: ${modelData[partner]}`;
+          infoSpan.style.color = '#28a745';
         } else {
-          infoSpan.textContent = '庫存: -';
+          infoSpan.textContent = '無庫存紀錄';
+          infoSpan.style.color = '#999';
         }
       } else {
         infoSpan.textContent = '';
@@ -1393,8 +1438,8 @@
 
     function updateAllInventoryDisplays() {
       document.querySelectorAll('.item-entry').forEach(entry => {
-        const modelSelect = entry.querySelector('.item-model');
-        updateInventoryDisplay(modelSelect);
+        const modelInput = entry.querySelector('.item-model');
+        updateInventoryDisplay(modelInput);
       });
     }
     
@@ -1403,6 +1448,13 @@
       const div = document.createElement('div');
       div.className = 'item-entry';
       div.dataset.index = itemIndex;
+      
+      // Generate quantity options 1-20
+      let qtyOptions = '';
+      for (let i = 1; i <= 20; i++) {
+        qtyOptions += `<option value="${i}">${i}</option>`;
+      }
+
       div.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr 70px; gap: 6px; margin-bottom: 6px;">
           <select class="input-field item-category" onchange="updateModelOptions(this)">
@@ -1411,11 +1463,10 @@
             <option value="lb">LB</option>
             <option value="hdp">Hard Docking Plate</option>
           </select>
-          <select class="input-field item-model" onchange="updateInventoryDisplay(this)">
-            <option value="">型號</option>
-          </select>
+          <input type="text" class="input-field item-model" placeholder="請先選擇類別" disabled 
+                 oninput="this.value = this.value.toUpperCase(); updateInventoryDisplay(this)">
           <select class="input-field item-quantity">
-            ${[1,2,3,4,5,6,7,8,9,10].map(i => `<option value="${i}">${i}</option>`).join('')}
+            ${qtyOptions}
           </select>
         </div>
         <div style="display: flex; gap: 6px; align-items: center;">
